@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="cs">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Lodní fond – vzorník (vývoj)</title>
+    <style>
+      /* dev-only layout; colours come from the CSS variables written by applyTheme() */
+      #root { max-width: 1100px; margin: 0 auto; padding: 16px 16px 48px; }
+      .dev-page { display: flex; flex-direction: column; gap: 16px; }
+      .dev-page h1 { font-size: 28px; }
+      .dev-page h3 { margin: 8px 0 0; font-size: 16px; font-weight: 800; }
+      .dev-nav { display: flex; flex-wrap: wrap; gap: 8px 16px; align-items: baseline; justify-content: space-between; }
+      .dev-nav a { color: var(--sea-light); }
+      .note-box { background: var(--navy); border: 2px solid var(--gold); border-radius: 8px; padding: 8px 12px; }
+      .swatches { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 12px; }
+      .swatch-card { display: flex; flex-direction: column; gap: 4px; background: var(--navy); border-radius: 8px; padding: 8px; }
+      .swatch-box { height: 44px; border-radius: 8px; border: 2px solid var(--navy); outline: 1px solid var(--muted); }
+      .swatch-name { font-weight: 800; font-size: 14px; }
+      .swatch-val { font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums; }
+      table.dev-table { width: 100%; border-collapse: collapse; font-size: 14px; font-variant-numeric: tabular-nums; }
+      .dev-table th, .dev-table td { padding: 6px 8px; text-align: left; border-bottom: 1px solid var(--navy); vertical-align: middle; }
+      .dev-table thead th { color: var(--muted); font-size: 12px; font-weight: 700; }
+      .dev-table td svg { vertical-align: middle; }
+      .pass { display: inline-flex; align-items: center; gap: 4px; }
+      .row { display: flex; flex-wrap: wrap; gap: 12px 16px; align-items: center; }
+      .tile { display: flex; flex-direction: column; align-items: center; gap: 4px; background: var(--navy); border-radius: 8px; padding: 8px; font-size: 12px; color: var(--muted); text-align: center; min-width: 84px; }
+      .tile svg, .tile canvas { display: block; }
+      .sea-box { background: var(--sea); border-radius: 8px; display: flex; align-items: center; justify-content: center; }
+      .panel-title { font-size: 12px; color: var(--muted); margin-bottom: 4px; }
+      .char-card { background: var(--navy); border-radius: 16px; padding: 12px; display: flex; flex-direction: column; gap: 8px; }
+      .char-panels { display: flex; flex-wrap: wrap; gap: 12px 16px; align-items: flex-start; }
+      .char-panels canvas { display: block; border-radius: 8px; }
+      .typo-sample { padding: 4px 0; border-bottom: 1px solid var(--navy); overflow-wrap: anywhere; }
+      .demo-header { position: relative; }
+      .stage { background: var(--navy); border-radius: 16px; padding: 16px; }
+      .demo-header.stage { padding: 0 0 20px; overflow: hidden; }
+      .demo-header .app-header { margin-bottom: 0; padding-bottom: 8px; }
+      .demo-header .header-wave { display: block; }
+      .checklist { list-style: none; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+      .checklist li { display: flex; gap: 10px; align-items: flex-start; }
+      .box { flex: none; width: 18px; height: 18px; margin-top: 2px; border: 2px solid var(--muted); border-radius: 4px; }
+      .grid-2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(380px, 1fr)); gap: 16px; align-items: start; }
+    </style>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="./style-guide.tsx"></script>
+  </body>
+</html>

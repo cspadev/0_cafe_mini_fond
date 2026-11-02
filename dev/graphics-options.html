@@ -1,0 +1,650 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Lodní fond – graphics options (dev)</title>
+    <style>
+      :root { --navy:#061a45; --blue:#0b3a96; --gold:#ffcc00; --text:#f4f7ff; --muted:#b8c3e0; }
+      * { box-sizing: border-box; }
+      body { margin: 0; background: #04122f; color: var(--text); font: 16px/1.4 ui-rounded, 'Segoe UI', system-ui, sans-serif; }
+      header.top { max-width: 1480px; margin: 0 auto; padding: 20px 20px 8px; }
+      h1 { margin: 0 0 4px; font-size: 28px; }
+      header.top p { margin: 0 0 8px; color: var(--muted); max-width: 900px; }
+      .tools { display: flex; gap: 16px; align-items: center; font-size: 14px; color: var(--muted); }
+      .wrap { overflow-x: auto; padding: 0 20px 48px; }
+      .grid { display: grid; grid-template-columns: 96px repeat(var(--cols, 4), minmax(300px, 1fr)); gap: 12px; min-width: calc(110px + var(--cols, 4) * 312px); max-width: calc(110px + var(--cols, 4) * 380px); margin: 0 auto; }
+      h2.sec { margin: 0 0 4px; font-size: 22px; }
+      header.top.sea-head { padding-top: 8px; }
+      .grid.gray { filter: grayscale(1); }
+      .colhead { position: sticky; top: 0; z-index: 5; background: #0a2260; border-radius: 12px; padding: 10px 12px; border: 2px solid #123a8c; }
+      .colhead h2 { margin: 0; font-size: 18px; }
+      .colhead p { margin: 2px 0 6px; font-size: 13px; color: var(--muted); }
+      .tags { display: flex; flex-wrap: wrap; gap: 4px; }
+      .tag { font-size: 11px; padding: 1px 8px; border-radius: 99px; background: #123a8c; color: #dbe6ff; }
+      .tag.warn { background: #6b4a00; color: #ffe39a; }
+      .rowlabel { align-self: center; font-weight: 800; font-size: 14px; color: var(--muted); }
+      .rowlabel small { display: block; font-weight: 400; font-size: 11px; }
+      .cell { border-radius: 14px; padding: 10px; display: flex; flex-wrap: wrap; gap: 10px 16px; align-items: center; justify-content: center; min-height: 100px; overflow: hidden; position: relative; }
+      .cell svg { display: block; flex: none; max-width: 100%; height: auto; }
+      .cell.scene { padding: 0; }
+      .cell.scene svg { width: 100%; }
+      .c0 { background: #2c8fd0; }
+      .c1 { background: #2c8fd0; }
+      .c2 { background: linear-gradient(160deg, #47b6f0, #1a68a8); }
+      .c3 { background: #2d86a6; }
+      .cell.ui { background: #061a45; }
+      .cell.dark { background: #061a45; }
+      .lab { font-size: 11px; color: rgba(255,255,255,.8); text-align: center; }
+      .stack { display: flex; flex-direction: column; align-items: center; gap: 2px; }
+
+      /* ---- sea animation (period = scene width, so the loop is seamless) ---- */
+      .drift { animation: drift linear infinite; }
+      @keyframes drift { to { transform: translateX(-320px); } }
+      .twinkle { animation: twinkle 2.6s ease-in-out infinite; }
+      @keyframes twinkle { 0%, 100% { opacity: .1; } 50% { opacity: .95; } }
+      .breathe { animation: breathe 3.2s ease-in-out infinite alternate; }
+      @keyframes breathe { to { transform: translateX(3px); } }
+      .ripple { transform-box: fill-box; transform-origin: center; animation: ripple 4.5s ease-out infinite; }
+      @keyframes ripple { from { transform: scale(.25); opacity: .8; } to { transform: scale(1.3); opacity: 0; } }
+      .bob { transform-box: fill-box; transform-origin: center; animation: bob 4s ease-in-out infinite alternate; }
+      @keyframes bob { from { transform: rotate(-6deg) translateY(-1px); } to { transform: rotate(5deg) translateY(2px); } }
+      .sway { animation: sway 5s ease-in-out infinite alternate; }
+      @keyframes sway { from { transform: translateY(-4px); } to { transform: translateY(5px); } }
+      .lanes { animation: lanes .6s linear infinite; }
+      @keyframes lanes { to { stroke-dashoffset: 13; } }
+      .still .drift, .still .twinkle, .still .breathe, .still .ripple, .still .bob, .still .sway, .still .lanes { animation-play-state: paused; }
+      .nowake .wake { display: none; }
+      @media (prefers-reduced-motion: reduce) { .drift, .twinkle, .breathe, .ripple, .bob, .sway, .lanes { animation: none; } }
+
+      /* ---- UI samples ---- */
+      .ui-card { width: 100%; max-width: 300px; padding: 14px; display: flex; flex-direction: column; gap: 10px; }
+      .ui-title { font-weight: 800; font-size: 16px; display: flex; justify-content: space-between; }
+      .ui-title span { font-weight: 600; font-size: 13px; opacity: .8; }
+      .ui-crates { display: flex; gap: 10px; align-items: center; font-weight: 800; font-variant-numeric: tabular-nums; }
+      .ui-crates span { margin-right: 6px; }
+      .ui-bar { height: 14px; border-radius: 99px; overflow: hidden; }
+      .ui-bar i { display: block; height: 100%; width: 62%; }
+      .ui-btns { display: flex; gap: 8px; }
+      .btn { font: inherit; font-weight: 800; border: 0; border-radius: 99px; padding: 0 18px; min-height: 44px; color: #fff; cursor: pointer; }
+      .btn.pri { flex: 1; color: var(--navy); }
+
+      .ui-a .ui-card { background: #0b3a96; border: 2px solid #061a45; border-radius: 16px; }
+      .ui-a .ui-bar { background: #061a45; border: 2px solid #061a45; }
+      .ui-a .ui-bar i { background: #4aa8ff; }
+      .ui-a .btn { border: 2px solid #061a45; background: #0b3a96; box-shadow: 0 3px 0 #082a70; }
+      .ui-a .btn.pri { background: #ffcc00; box-shadow: 0 3px 0 #c79a00; }
+
+      .ui-b .ui-card { background: repeating-linear-gradient(135deg, #0d44aa 0 10px, #0b3f9e 10px 20px); border: 2px solid #061a45; border-radius: 16px; box-shadow: 0 5px 0 #05163a, inset 0 3px 0 rgba(255,255,255,.2), inset 0 -3px 0 rgba(0,0,20,.25); position: relative; }
+      .ui-b .ui-title { margin: -14px -14px 2px; padding: 8px 14px; background: #082a70; border-radius: 14px 14px 0 0; border-bottom: 2px solid #061a45; }
+      .ui-b .ui-bar { background: #061a45; border: 2px solid #061a45; box-shadow: inset 0 3px 0 rgba(0,0,0,.35); }
+      .ui-b .ui-bar i { background: repeating-linear-gradient(90deg, #4aa8ff 0 14px, #3b95ec 14px 16px); box-shadow: inset 0 3px 0 rgba(255,255,255,.45); }
+      .ui-b .btn { border: 2px solid #061a45; background: #1a55c8; box-shadow: inset 0 3px 0 rgba(255,255,255,.28), inset 0 -4px 0 rgba(0,0,40,.35), 0 4px 0 #05163a; }
+      .ui-b .btn.pri { background: #ffcc00; box-shadow: inset 0 3px 0 #fff3a0, inset 0 -4px 0 #d9a800, 0 4px 0 #8a6a00; }
+
+      .ui-c .ui-card { background: linear-gradient(180deg, #2166d6, #0b3a96 55%, #082e78); border: 1px solid rgba(255,255,255,.28); border-radius: 18px; box-shadow: 0 14px 28px rgba(0,8,40,.55), inset 0 1px 0 rgba(255,255,255,.45), inset 0 0 24px rgba(120,180,255,.12); }
+      .ui-c .ui-bar { background: rgba(2,12,50,.6); box-shadow: inset 0 2px 4px rgba(0,0,0,.55); }
+      .ui-c .ui-bar i { background: linear-gradient(180deg, #8ccaff, #3d97f0 50%, #2a73c8); box-shadow: 0 0 12px rgba(100,180,255,.7); }
+      .ui-c .btn { background: linear-gradient(180deg, #3c82e8, #1c54b8); box-shadow: 0 6px 12px rgba(0,8,40,.5), inset 0 1px 0 rgba(255,255,255,.55); border: 1px solid rgba(255,255,255,.3); }
+      .ui-c .btn.pri { background: linear-gradient(180deg, #fff08a 0, #ffd21f 45%, #f5a800 100%); box-shadow: 0 6px 14px rgba(255,170,0,.35), 0 3px 0 #b97a00, inset 0 2px 0 rgba(255,255,255,.8); border: 1px solid #fff1a8; }
+
+      .ui-d .ui-card { background: #214a8c; background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n' x='0' y='0' width='100%25' height='100%25'><feTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='3' seed='5'/><feColorMatrix values='0 0 0 0 .1 0 0 0 0 .05 0 0 0 0 .2 1.6 0 0 0 -.62'/></filter><rect width='160' height='160' filter='url(%23n)' opacity='.55'/></svg>"); border: 2.5px solid #2a1b3d; border-radius: 16px 12px 18px 11px / 12px 17px 11px 16px; box-shadow: 4px 5px 0 #1a0f2a; }
+      .ui-d .ui-title { font-family: Georgia, 'Palatino Linotype', serif; font-style: italic; border-bottom: 2px dashed rgba(255,235,200,.45); padding-bottom: 6px; }
+      .ui-d .ui-bar { background: #1a1230; border: 2px solid #2a1b3d; border-radius: 9px 12px 8px 12px; }
+      .ui-d .ui-bar i { background: repeating-linear-gradient(115deg, #6fb6c8 0 6px, #5aa3b8 6px 9px); }
+      .ui-d .btn { border: 2.5px solid #2a1b3d; background: #3d6bb0; border-radius: 14px 10px 15px 9px / 10px 14px 9px 15px; box-shadow: 3px 4px 0 #1a0f2a; font-family: Georgia, serif; }
+      .ui-d .btn.pri { background: #f2b632; }
+
+      footer.note { max-width: 1480px; margin: 0 auto; padding: 0 20px 40px; color: var(--muted); font-size: 14px; }
+      footer.note b { color: var(--text); }
+    </style>
+  </head>
+  <body>
+    <header class="top">
+      <h1>Lodní fond – graphics options</h1>
+      <p><b>1 · Direction: detailed flat (B).</b> In-game ships and hazards get the extra detail; menu icons (ship status, crates, UI card) stay exactly as today because small icons read worse with extra noise. Column A is the shipped look (ported 1:1 from <code>src/art/shapes.ts</code>). Add <code>?all</code> to the URL to also see the earlier gloss (C) and storybook (D) experiments.</p>
+      <div class="tools">
+        <label><input type="checkbox" id="gray" /> Grayscale check (grafika.md ch. 6)</label>
+        <label><input type="checkbox" id="still" /> Pause animation</label>
+        <label><input type="checkbox" id="wakes" checked /> Ship wakes (sea section)</label>
+      </div>
+    </header>
+    <div class="wrap"><div class="grid" id="grid"></div></div>
+    <header class="top sea-head">
+      <h2 class="sec">2 · Sea options</h2>
+      <p>All four sit under the detailed-flat ships and hazards, are animated with plain CSS (the sea scrolls against the fleet's heading), and keep to the sea's own blue/teal range so hazard colours (storm, kraken purple, pirate navy, mermaid teal) stay the clear foreground. Use the grayscale toggle to check that nothing in the water competes with them.</p>
+    </header>
+    <div class="wrap"><div class="grid" id="seaGrid"></div></div>
+    <footer class="note">
+      <b>Notes.</b> B keeps the "flat colour + outline" rules but breaks the "max 3 colours per object" rule. C and D need grafika.md principle 1 (no gradients, no textures) to be rewritten. In the game each sea layer would be pre-rendered once into a tile canvas and scrolled by <code>tcam * pps</code> (parallax = a different speed per layer), so the extra cost is a few <code>drawImage</code> calls per frame. Wakes, fish, gulls and driftwood are separable and can be mixed onto any base. All options leave silhouettes and hit areas identical, so gameplay fairness (principle 6) is unaffected.
+    </footer>
+
+    <script>
+      // ------------------------------------------------------------------ shared helpers
+      const T = { navy:'#061a45', blue:'#0b3a96', gold:'#ffcc00', sea:'#2c8fd0', seaLight:'#52aee3', foam:'#ffffff', sand:'#f3dfa2', wood:'#c8763a', woodDark:'#8a4a22', sail:'#fff6df', ok:'#3ecf6e', repaired:'#4aa8ff', lost:'#8b93a8', warn:'#f59e0b', danger:'#e5484d', storm:'#5b6aa8', stormDark:'#3a4680', kraken:'#8e4fc9', krakenDark:'#5d2a8e', mermaid:'#1fb5a6', pearl:'#f4f0ff', skin:'#ffd9b3' };
+      const sailCols = [T.danger, T.repaired, T.gold];
+      let _n = 0;
+      const uid = (p) => `${p}${++_n}`;
+      const f = (n) => String(Math.round(n * 100) / 100);
+      const circle = (cx, cy, r) => `M${cx - r} ${cy}a${r} ${r} 0 1 0 ${2 * r} 0a${r} ${r} 0 1 0 ${-2 * r} 0Z`;
+      const rng = (seed) => { let a = seed >>> 0; return () => { a = (a + 0x6d2b79f5) >>> 0; let t = a; t = Math.imul(t ^ (t >>> 15), t | 1); t ^= t + Math.imul(t ^ (t >>> 7), t | 61); return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; };
+      const arc = (cx, cy, r, a0, a1) => { const p = (a) => [cx + r * Math.cos((a * Math.PI) / 180), cy + r * Math.sin((a * Math.PI) / 180)]; const [x0, y0] = p(a0), [x1, y1] = p(a1); return `M${f(x0)} ${f(y0)}A${r} ${r} 0 ${a1 - a0 > 180 ? 1 : 0} 1 ${f(x1)} ${f(y1)}`; };
+      const bez = (p, t) => { const u = 1 - t; return [u*u*u*p[0] + 3*u*u*t*p[2] + 3*u*t*t*p[4] + t*t*t*p[6], u*u*u*p[1] + 3*u*u*t*p[3] + 3*u*t*t*p[5] + t*t*t*p[7]]; };
+      function taper(p, w0, w1, N = 18) {
+        const L = [], R = [];
+        for (let i = 0; i <= N; i++) {
+          const t = i / N; const [x, y] = bez(p, t); const [xa, ya] = bez(p, Math.min(1, t + 0.01)); const [xb, yb] = bez(p, Math.max(0, t - 0.01));
+          let dx = xa - xb, dy = ya - yb; const l = Math.hypot(dx, dy) || 1; dx /= l; dy /= l;
+          const w = (w0 + (w1 - w0) * t) / 2; L.push([x - dy * w, y + dx * w]); R.push([x + dy * w, y - dx * w]);
+        }
+        return 'M' + L.concat(R.reverse()).map((q) => f(q[0]) + ' ' + f(q[1])).join('L') + 'Z';
+      }
+      const line = (p, N = 18) => 'M' + Array.from({ length: N + 1 }, (_, i) => bez(p, i / N).map(f).join(' ')).join('L');
+      const TENT = [[60,50,40,40,22,36,10,22],[60,50,38,52,22,56,6,52],[60,50,42,62,28,76,14,90],[60,50,80,40,98,36,110,22],[60,50,82,52,98,56,114,52],[60,50,78,62,92,76,106,90],[60,50,56,36,52,22,46,8],[60,50,64,36,68,22,74,8]];
+      const shorePath = (h, x = 22, amp = 5, close = true) => { let d = `M${x} 0`; for (let y = 0, i = 0; y < h; y += 24, i++) d += `q${i % 2 ? -amp : amp} 12 0 24`; return close ? d + 'H0V0Z' : d; };
+      const HULL = 'M12 1.6C15.8 4.8 17 11 16.1 18.6Q15.8 22 12 22.6Q8.2 22 7.9 18.6C7 11 8.2 4.8 12 1.6Z';
+      const WRENCH = 'M14.7 5.4a4.2 4.2 0 0 0-5.2 5.6L4.6 15.9a2 2 0 0 0 2.9 2.9L12.4 14a4.2 4.2 0 0 0 5.6-5.2L15.4 11.4L12.6 8.6Z';
+      const GLYPH = { fund: 'M12 5.2L17.6 7.4V12C17.6 15.2 15.4 17.6 12 19C8.6 17.6 6.4 15.2 6.4 12V7.4Z', cargo: 'M6.8 8.6H17.2V17.6H6.8ZM6.8 12.4H17.2M12 8.6V17.6', profit: circle(12, 12.4, 5.2) + 'M12 9.6V15.2M10.2 11.2Q12 9.8 13.8 11.2', repair: 'M12.8 4.8L10.4 11.2L14.2 12.8L11.2 19.4' };
+      const CRATE = 'M3.5 6Q3.5 3.5 6 3.5H18Q20.5 3.5 20.5 6V18Q20.5 20.5 18 20.5H6Q3.5 20.5 3.5 18Z';
+      const BOLT = 'M8 0L0 14H6L3 26L14 9H7Z';
+      const DIM = { ship: [24, 24], storm: [260, 104], kraken: [120, 100], pirate: [100, 100], mermaid: [40, 64], crate: [24, 24] };
+      const DISP = { ship: 110, storm: 290, kraken: 220, pirate: 170, mermaid: 120, crate: 44 };
+      const STORM_LOBES = [{ x: 30, y: 54, r: 24 }, { x: 70, y: 42, r: 32 }, { x: 130, y: 36, r: 38 }, { x: 190, y: 42, r: 32 }, { x: 230, y: 54, r: 24 }, { x: 100, y: 58, r: 26 }, { x: 160, y: 58, r: 26 }];
+      const STORM_ORDER = [5, 6, 0, 4, 1, 3, 2];
+
+      const sv = (kind, inner, w) => { const [a, b] = DIM[kind]; return `<svg viewBox="0 0 ${a} ${b}" width="${w ?? DISP[kind]}" height="${((w ?? DISP[kind]) * b) / a}" overflow="visible">${inner}</svg>`; };
+      const ppuOf = (kind, w) => (w ?? DISP[kind]) / DIM[kind][0];
+
+      // ================================================================== A: current (port of src/art/shapes.ts)
+      const P = (parts) => parts.map((p) => `<path d="${p.d}" fill="${p.fill || 'none'}"${p.stroke ? ` stroke="${p.stroke}" stroke-width="${p.sw || 2}"` : ''} stroke-linecap="round" stroke-linejoin="round"${p.dash ? ` stroke-dasharray="${p.dash}"` : ''}${p.opacity != null ? ` opacity="${p.opacity}"` : ''}/>`).join('');
+      const A = {
+        id: 0,
+        ship(o = {}) {
+          const { sail = 0, scale = 1, state = 'normal' } = o; const INK = T.navy;
+          if (state === 'lost') return P([{ d: HULL, fill: T.lost, stroke: INK, sw: 1.3 }, { d: 'M7.6 8.6L16.4 17.4M16.4 8.6L7.6 17.4', stroke: INK, sw: 2.2 }]);
+          if (state === 'arrived' || state === 'repaired') {
+            const parts = [{ d: HULL, fill: state === 'arrived' ? T.ok : T.repaired, stroke: INK, sw: 1.3 }, { d: 'M3.4 9.2Q12 7.4 20.6 9.2L20.6 13.2Q12 11.4 3.4 13.2Z', fill: T.sail, stroke: INK, sw: 1.2 }, { d: circle(12, 4.2, 1.4), fill: INK }];
+            if (state === 'repaired') parts.push({ d: circle(18.4, 18.4, 5.2), fill: INK, stroke: T.foam, sw: 1 }, { d: 'M15.9 20.9L19.2 17.6', stroke: T.foam, sw: 1.8 }, { d: 'M18.2 15.7a1.9 1.9 0 1 0 2.5 2.5', stroke: T.foam, sw: 1.5 });
+            return P(parts);
+          }
+          const hw = Math.min(11, 8.2 * scale), x0 = 12 - hw, x1 = 12 + hw, acc = sailCols[((sail % 3) + 3) % 3];
+          return P([{ d: HULL, fill: T.wood, stroke: INK, sw: 1.3 }, { d: `M${f(x0)} 9.2Q12 7.4 ${f(x1)} 9.2L${f(x1)} 13.2Q12 11.4 ${f(x0)} 13.2Z`, fill: T.sail, stroke: INK, sw: 1.2 }, { d: `M${f(12 - hw * 0.28)} 8.3L${f(12 - hw * 0.28)} 12.2L${f(12 + hw * 0.28)} 12.2L${f(12 + hw * 0.28)} 8.3Z`, fill: acc }, { d: circle(12, 4.2, 1.4), fill: T.woodDark }]);
+        },
+        storm() {
+          const W = 260, m = 4, I = T.navy, c = [];
+          for (let j = 0; j <= m; j++) c.push({ x: 26 + ((W - 52) * j) / m, y: j % 2 === 0 ? 52 : 42, r: j % 2 === 0 ? 26 : 33 });
+          const mid = c[3], rain = [];
+          for (let i = 0; i < 6; i++) { const x = 18 + ((W - 36) * (i + 0.5)) / 6; rain.push({ d: `M${f(x)} 80l-4 9`, stroke: T.foam, sw: 2.2, opacity: 0.7 }); }
+          return P([{ d: c.map((q) => circle(q.x, q.y + 5, q.r)).join(''), fill: T.stormDark, stroke: I, sw: 3 }, { d: c.map((q) => circle(q.x, q.y, q.r)).join(''), fill: T.storm }, ...rain, { d: circle(mid.x - 11, mid.y - 2, 5.5) + circle(mid.x + 11, mid.y - 2, 5.5), fill: T.foam }, { d: circle(mid.x - 10, mid.y - 1, 2.4) + circle(mid.x + 12, mid.y - 1, 2.4), fill: I }, { d: `M${f(mid.x - 19)} ${f(mid.y - 14)}L${f(mid.x - 5)} ${f(mid.y - 8)}M${f(mid.x + 19)} ${f(mid.y - 14)}L${f(mid.x + 5)} ${f(mid.y - 8)}`, stroke: I, sw: 3 }, { d: `M${f(mid.x - 9)} ${f(mid.y + 14)}Q${f(mid.x)} ${f(mid.y + 7)} ${f(mid.x + 9)} ${f(mid.y + 14)}`, stroke: I, sw: 3 }]);
+        },
+        kraken() {
+          const I = T.navy, tent = ['M60 50C40 40 22 36 10 22', 'M60 50C38 52 22 56 6 52', 'M60 50C42 62 28 76 14 90', 'M60 50C80 40 98 36 110 22', 'M60 50C82 52 98 56 114 52', 'M60 50C78 62 92 76 106 90', 'M60 50C56 36 52 22 46 8', 'M60 50C64 36 68 22 74 8'];
+          return P([...tent.map((d) => ({ d, stroke: I, sw: 15 })), ...tent.map((d) => ({ d, stroke: T.kraken, sw: 10 })), { d: circle(60, 50, 27), fill: T.kraken, stroke: I, sw: 3 }, { d: 'M38 60Q60 80 82 60Q60 70 38 60Z', fill: T.krakenDark }, { d: circle(49, 45, 9) + circle(71, 45, 9), fill: T.foam, stroke: I, sw: 2 }, { d: circle(49, 46, 3.6) + circle(71, 46, 3.6), fill: T.gold }, { d: circle(20, 30, 2) + circle(14, 54, 2) + circle(24, 80, 2) + circle(100, 30, 2) + circle(106, 54, 2) + circle(96, 80, 2), fill: T.foam }]);
+        },
+        pirate() {
+          const I = T.navy;
+          return P([{ d: 'M50 4L69 40L65 90L50 97L35 90L31 40Z', fill: I, stroke: T.seaLight, sw: 2.4 }, { d: 'M50 22V84', stroke: T.woodDark, sw: 3 }, { d: 'M6 38Q50 26 94 38L94 68Q50 56 6 68Z', fill: T.danger, stroke: I, sw: 3 }, { d: circle(50, 49, 10.5), fill: T.foam }, { d: 'M44 59H56V65H44Z', fill: T.foam }, { d: circle(45.5, 48, 2.8) + circle(54.5, 48, 2.8), fill: I }, { d: 'M50 4L50 20L70 12Z', fill: T.danger, stroke: I, sw: 2 }]);
+        },
+        mermaid() {
+          const I = T.navy;
+          return P([{ d: 'M20 34C8 40 8 54 15 62L20 56L25 62C32 54 32 40 20 34Z', fill: T.mermaid, stroke: I, sw: 2.4 }, { d: 'M12 26Q20 12 28 26Q27 36 20 36Q13 36 12 26Z', fill: T.warn, stroke: I, sw: 2.2 }, { d: circle(20, 26, 7), fill: T.skin, stroke: I, sw: 2 }, { d: circle(17.5, 25, 1.1) + circle(22.5, 25, 1.1), fill: I }, { d: 'M17.5 29Q20 31 22.5 29', stroke: I, sw: 1.4 }, { d: circle(33, 33, 5.5), fill: T.pearl, stroke: I, sw: 1.8 }]);
+        },
+        crate(role) {
+          const col = { fund: T.repaired, cargo: T.gold, profit: T.ok, repair: T.danger }[role], ink = role === 'cargo' || role === 'profit' ? T.navy : T.foam;
+          return P([{ d: CRATE, fill: col, stroke: T.navy, sw: 1.6 }, { d: GLYPH[role], stroke: ink, sw: 1.7 }]);
+        },
+        sea(w, h) {
+          const r = rng(11); let s = `<rect width="${w}" height="${h}" fill="${T.sea}"/>`;
+          for (let i = 0; i < 12; i++) { const x = 40 + r() * (w - 60), y = 10 + r() * (h - 20); s += `<path d="M${f(x)} ${f(y)}q4-5 8 0t8 0" fill="none" stroke="#fff" stroke-width="1.6" stroke-linecap="round" opacity=".8"/>`; }
+          s += [h / 3, (2 * h) / 3].map((y) => `<path d="M24 ${y}H${w}" stroke="${T.seaLight}" stroke-width="1.5" stroke-dasharray="6 7" opacity=".6"/>`).join('');
+          return s + `<path d="${shorePath(h)}" fill="${T.sand}"/><path d="${shorePath(h, 22, 5, false)}" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round"/>`;
+        },
+        gust: (x, y) => `<g fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" opacity=".85"><path d="M${x} ${y}h60q10 0 10-8"/><path d="M${x + 10} ${y + 14}h70q10 0 10 8"/><path d="M${x} ${y + 30}h50"/></g>`,
+        ui: (role) => A.crate(role),
+      };
+
+      // ================================================================== B + D: "detail" factory (shared geometry, different palette/filters)
+      const KB = {
+        id: 1, ink: T.navy, ow: 1,
+        wood: { base: '#c8763a', dark: '#8a4a22', rim: '#e8a266', deck: '#dd9a5c' }, ok: { base: '#3ecf6e', dark: '#2a9a50', rim: '#8ae8a8', deck: '#62dc8e' }, rep: { base: '#4aa8ff', dark: '#2f7ccc', rim: '#9bd0ff', deck: '#78bbff' }, lost: { base: '#8b93a8', dark: '#626a80', rim: '#b4bacb', deck: '#a0a7ba' },
+        sail: '#fff6df', sailShade: '#e6d8b8', lantern: '#ffcc00', sea: '#2c8fd0', seaLight: '#52aee3', foam: '#ffffff', sand: '#f3dfa2', sandDark: '#d4bb78', gold: '#ffcc00', danger: '#e5484d', dangerDark: '#a82f34', ok2: '#3ecf6e',
+        storm: '#5b6aa8', stormDark: '#3a4680', stormLight: '#8c9ad6', rain: '#c8e6ff', kraken: '#8e4fc9', krakenDark: '#5d2a8e', krakenLight: '#b684e6',
+        mermaid: '#1fb5a6', mermaidDark: '#12857a', hair: '#f59e0b', hairDark: '#c27200', skin: '#ffd9b3', pearl: '#f4f0ff', pirate: '#1a2352', pirateDeck: '#6b4a33',
+        filter: null, grain: null, hatch: false,
+      };
+      const filt = (id, ppu, rough, grain) => `<filter id="${id}" x="-12%" y="-12%" width="124%" height="124%" color-interpolation-filters="sRGB">
+        <feTurbulence type="fractalNoise" baseFrequency="${f(ppu / 36)}" numOctaves="2" seed="4" result="n"/>
+        <feDisplacementMap in="SourceGraphic" in2="n" scale="${f(rough / ppu)}" xChannelSelector="R" yChannelSelector="G" result="d"/>
+        <feTurbulence type="fractalNoise" baseFrequency="${f(Math.min(1.6, ppu / 1.5))}" numOctaves="3" seed="9" result="g"/>
+        <feColorMatrix in="g" type="matrix" values="0 0 0 0 .16  0 0 0 0 .09  0 0 0 0 .08  2.2 0 0 0 -.95" result="ga"/>
+        <feComposite in="ga" in2="d" operator="in" result="gc"/>
+        <feComponentTransfer in="gc" result="gcc"><feFuncA type="linear" slope="${grain}"/></feComponentTransfer>
+        <feMerge><feMergeNode in="d"/><feMergeNode in="gcc"/></feMerge></filter>`;
+      const KD = Object.assign({}, KB, {
+        id: 3, ink: '#2a1b3d', ow: 0.8,
+        wood: { base: '#b9693a', dark: '#74391f', rim: '#dc9a62', deck: '#d6a066' }, ok: { base: '#59b36f', dark: '#357a4a', rim: '#9ad9a8', deck: '#7cc78e' }, rep: { base: '#5a9fd8', dark: '#386ea6', rim: '#a6cdee', deck: '#82b7e2' }, lost: { base: '#8a8da0', dark: '#5c6074', rim: '#b3b6c6', deck: '#a0a3b4' },
+        sail: '#f8edd2', sailShade: '#dfcba0', lantern: '#f2b632', sea: '#2d86a6', seaLight: '#69bccb', foam: '#fbf3df', sand: '#ecd49a', sandDark: '#c9ad6a', gold: '#f2b632', danger: '#d84a48', dangerDark: '#9a2f33', ok2: '#59b36f',
+        storm: '#6f7bb4', stormDark: '#454f8a', stormLight: '#9ba6d8', rain: '#dcefff', kraken: '#7f4aa8', krakenDark: '#4f2878', krakenLight: '#a97bd0',
+        mermaid: '#2aa99b', mermaidDark: '#177468', hair: '#e8892a', hairDark: '#a9591a', skin: '#f9d3b0', pearl: '#f6f0e6', pirate: '#2a2446', pirateDeck: '#7a5638',
+        hatch: true,
+        filter: (id, ppu) => filt(id, ppu, 3, 0.55),
+        grain: (id, ppu) => filt(id, ppu, 0, 0.5),
+      });
+
+      function makeDetail(K) {
+        const wrapF = (id, ppu, inner, extraDefs = '') => `<defs>${extraDefs}${K.filter ? K.filter(id + 'f', ppu) : ''}</defs><g${K.filter ? ` filter="url(#${id}f)"` : ''}>${inner}</g>`;
+        const D = { id: K.id };
+        D.ship = (o = {}) => {
+          const { sail = 0, scale = 1, state = 'normal', ppu = ppuOf('ship') } = o; const id = uid('s');
+          const pal = { normal: K.wood, arrived: K.ok, repaired: K.rep, lost: K.lost }[state];
+          const hw = Math.min(11, 8.2 * scale), x0 = 12 - hw, x1 = 12 + hw, acc = state === 'normal' || state === 'lost' ? sailCols[((sail % 3) + 3) % 3] : sailCols[((sail % 3) + 3) % 3];
+          const sailD = `M${f(x0)} 9.2Q12 7.2 ${f(x1)} 9.2L${f(x1)} 13.4Q12 11.4 ${f(x0)} 13.4Z`, ow = K.ow;
+          let g = '';
+          if (state !== 'lost') g += `<path d="M7.4 6.4Q5.4 9.6 6.2 13.6M16.6 6.4Q18.6 9.6 17.8 13.6" fill="none" stroke="${K.foam}" stroke-width=".9" stroke-linecap="round" opacity=".9"/>`;
+          g += `<path d="${HULL}" fill="${pal.base}"/><g clip-path="url(#${id}h)"><rect x="12" y="0" width="12" height="24" fill="${pal.dark}" opacity=".42"/><path d="${HULL}" fill="none" stroke="${pal.rim}" stroke-width="2.6"/>
+            <path d="${HULL}" transform="translate(12 12.1) scale(.58 .8) translate(-12 -12.1)" fill="${pal.deck}" stroke="${pal.dark}" stroke-width=".6"/>
+            <path d="M12 5V20M10.2 6.5V19M13.8 6.5V19" stroke="${pal.dark}" stroke-width=".3" opacity=".7" fill="none"/>
+            ${K.hatch ? `<path d="M14.6 14l2-2M14.8 16.4l2.4-2.4M14.4 18.8l2.6-2.6M9.6 15.4l-1.8 1.8" stroke="${K.ink}" stroke-width=".35" opacity=".6" fill="none" stroke-linecap="round"/>` : ''}</g>
+            <path d="${HULL}" fill="none" stroke="${K.ink}" stroke-width="${1.2 * ow}" stroke-linejoin="round"/>
+            <path d="${circle(12, 4, 1.35)}" fill="${pal.dark}" stroke="${K.ink}" stroke-width=".5"/><circle cx="11.6" cy="3.6" r=".42" fill="#fff" opacity=".75"/>
+            <circle cx="12" cy="20.5" r=".85" fill="${K.lantern}" stroke="${K.ink}" stroke-width=".35"/>`;
+          if (state === 'lost') {
+            g += `<path d="M7.8 8.6L16.2 17.4M16.2 8.6L7.8 17.4" stroke="${K.ink}" stroke-width="2.2" stroke-linecap="round"/><path d="M12 8.6V11.4" stroke="${pal.dark}" stroke-width="1.2" stroke-linecap="round"/>`;
+          } else {
+            g += `<path d="${sailD}" transform="translate(.5 1.1)" fill="${K.ink}" opacity=".28"/><path d="${sailD}" fill="${K.sail}"/><g clip-path="url(#${id}s)">
+              <rect x="${f(12 - hw * 0.3)}" y="6" width="${f(hw * 0.6)}" height="10" fill="${acc}"/>
+              <path d="M${f(12 - hw * 0.64)} 6V15M${f(12 + hw * 0.64)} 6V15" stroke="${K.sailShade}" stroke-width=".4" fill="none"/>
+              <path d="M0 12.4Q12 10.4 24 12.4V16H0Z" fill="${K.sailShade}" opacity=".75"/>
+              <path d="M${f(x0 + 1)} 9.7Q12 8 ${f(x1 - 1)} 9.7" stroke="#fff" stroke-width=".55" opacity=".8" fill="none" stroke-linecap="round"/></g>
+              <path d="${sailD}" fill="none" stroke="${K.ink}" stroke-width="${1.05 * ow}" stroke-linejoin="round"/>
+              <circle cx="12" cy="10.7" r="1.05" fill="${pal.dark}" stroke="${K.ink}" stroke-width=".5"/><circle cx="11.7" cy="10.4" r=".32" fill="#fff" opacity=".85"/>`;
+          }
+          if (state === 'repaired') g += `<circle cx="18.4" cy="18.4" r="5.2" fill="${K.ink}" stroke="${K.foam}" stroke-width="1"/><path d="${WRENCH}" transform="translate(14 13.6) scale(.4)" fill="none" stroke="${K.foam}" stroke-width="3.4" stroke-linejoin="round"/>`;
+          const defs = `<clipPath id="${id}h"><path d="${HULL}"/></clipPath>` + (state !== 'lost' ? `<clipPath id="${id}s"><path d="${sailD}"/></clipPath>` : '');
+          return wrapF(id, ppu, g, defs);
+        };
+        D.storm = (o = {}) => {
+          const ppu = o.ppu ?? ppuOf('storm'), id = uid('st'), I = K.ink, ow = K.ow;
+          let g = `<path d="${STORM_LOBES.map((l) => circle(l.x, l.y + 5, l.r)).join('')}" fill="${K.stormDark}" stroke="${I}" stroke-width="${3 * ow}" stroke-linejoin="round"/>`;
+          for (const i of STORM_ORDER) { const l = STORM_LOBES[i]; g += `<path d="${circle(l.x, l.y, l.r)}" fill="${K.storm}"/><path d="${arc(l.x, l.y, l.r - 3.4, 195, 285)}" fill="none" stroke="${K.stormLight}" stroke-width="3.4" stroke-linecap="round" opacity=".9"/>`; if (K.hatch) g += `<path d="${arc(l.x, l.y, l.r - 7, 20, 95)}" fill="none" stroke="${K.stormDark}" stroke-width="1" stroke-dasharray="3 3" opacity=".7"/>`; }
+          if (K.hatch) g += `<path d="M44 60q8-8 16 0M150 24q8-8 16 0M205 52q8-8 16 0" fill="none" stroke="${K.stormLight}" stroke-width="1.6" stroke-linecap="round" opacity=".8"/>`;
+          let rain = ''; for (let x = 36; x <= 232; x += 21) rain += `<path d="M${x} ${92 + (x % 3)}l-3.6 9" stroke="${K.rain}" stroke-width="2.4" stroke-linecap="round"/>`;
+          g += rain + `<path d="${BOLT}" transform="translate(168 64) scale(1.1)" fill="${K.gold}" stroke="${I}" stroke-width="${1.7 * ow}" stroke-linejoin="round"/><path d="M8.6 3.6L4.6 11.4" transform="translate(168 64) scale(1.1)" stroke="#fff" stroke-width="1.2" stroke-linecap="round" opacity=".8"/>`;
+          const fx = 130, fy = 46;
+          g += `<circle cx="${fx - 20}" cy="${fy + 11}" r="5" fill="#ff9bb0" opacity=".55"/><circle cx="${fx + 20}" cy="${fy + 11}" r="5" fill="#ff9bb0" opacity=".55"/>
+            <circle cx="${fx - 12}" cy="${fy - 4}" r="7.6" fill="#fff" stroke="${I}" stroke-width="${1.7 * ow}"/><circle cx="${fx + 12}" cy="${fy - 4}" r="7.6" fill="#fff" stroke="${I}" stroke-width="${1.7 * ow}"/>
+            <circle cx="${fx - 10.4}" cy="${fy - 3}" r="3.4" fill="${I}"/><circle cx="${fx + 10.4}" cy="${fy - 3}" r="3.4" fill="${I}"/><circle cx="${fx - 9.4}" cy="${fy - 4.2}" r="1.1" fill="#fff"/><circle cx="${fx + 11.4}" cy="${fy - 4.2}" r="1.1" fill="#fff"/>
+            <path d="M${fx - 22} ${fy - 17}L${fx - 6} ${fy - 11}M${fx + 22} ${fy - 17}L${fx + 6} ${fy - 11}" stroke="${I}" stroke-width="${3.4 * ow}" stroke-linecap="round"/>
+            <path d="M${fx - 9} ${fy + 14}Q${fx} ${fy + 6} ${fx + 9} ${fy + 14}" fill="none" stroke="${I}" stroke-width="${3 * ow}" stroke-linecap="round"/>`;
+          return wrapF(id, ppu, g);
+        };
+        D.kraken = (o = {}) => {
+          const ppu = o.ppu ?? ppuOf('kraken'), id = uid('k'), I = K.ink, ow = K.ow; let g = '';
+          for (const t of TENT) {
+            g += `<path d="${taper(t, 15, 4.6)}" fill="${K.kraken}" stroke="${I}" stroke-width="${2.2 * ow}" stroke-linejoin="round"/>`;
+          }
+          for (const t of TENT) {
+            g += `<path d="${line(t)}" fill="none" stroke="${K.krakenLight}" stroke-width="1.6" stroke-linecap="round" opacity=".55" transform="translate(-1.2 -1)"/>`;
+            for (let i = 0; i < 5; i++) { const [x, y] = bez(t, 0.3 + i * 0.13); const r = 2.5 - i * 0.32; g += `<circle cx="${f(x)}" cy="${f(y)}" r="${f(r)}" fill="#f6dcff" stroke="${K.krakenDark}" stroke-width=".7"/><circle cx="${f(x)}" cy="${f(y)}" r="${f(r * 0.4)}" fill="${K.krakenLight}"/>`; }
+          }
+          g += `<path d="${circle(60, 50, 27)}" fill="${K.krakenDark}" stroke="${I}" stroke-width="${3 * ow}"/><path d="${circle(58, 48, 25)}" fill="${K.kraken}"/><path d="${arc(58, 48, 21, 195, 290)}" fill="none" stroke="${K.krakenLight}" stroke-width="3.6" stroke-linecap="round" opacity=".9"/>
+            <path d="${circle(47, 31, 2.8) + circle(60, 28, 2) + circle(72, 32, 2.4) + circle(37, 40, 1.8)}" fill="${K.krakenDark}" opacity=".5"/>
+            <path d="${circle(87, 46, 3)}" fill="${K.krakenDark}" opacity=".35"/>`;
+          const clip = (cx) => `<clipPath id="${id}e${cx}"><circle cx="${cx}" cy="45" r="9"/></clipPath>`;
+          g += `<defs>${clip(49)}${clip(71)}</defs>`;
+          for (const [cx, dir] of [[49, 1], [71, -1]]) {
+            g += `<circle cx="${cx}" cy="45" r="9" fill="#fff" stroke="${I}" stroke-width="${2 * ow}"/><circle cx="${cx + dir * 1.5}" cy="46" r="5.2" fill="${K.gold}"/><ellipse cx="${cx + dir * 1.5}" cy="46" rx="1.8" ry="4" fill="${I}"/><circle cx="${cx + dir * 0.4}" cy="43.6" r="1.4" fill="#fff"/>
+              <g clip-path="url(#${id}e${cx})"><path d="M${cx - dir * 11} 36L${cx - dir * 11} ${f(38.5)}L${cx + dir * 11} 45L${cx + dir * 11} 33Z" fill="${K.kraken}" stroke="${I}" stroke-width="${2 * ow}" stroke-linejoin="round"/></g>`;
+          }
+          g += `<path d="M50 62Q60 69 70 62" fill="none" stroke="${I}" stroke-width="${2.2 * ow}" stroke-linecap="round"/><path d="M54 64.6L55.4 67.6L56.8 65.4M63.2 65.4L64.6 67.6L66 64.6" fill="#fff" stroke="${I}" stroke-width=".7" stroke-linejoin="round"/>
+            <path d="${circle(20, 30, 2) + circle(14, 54, 1.6) + circle(24, 80, 2.2) + circle(100, 30, 2) + circle(106, 54, 1.6) + circle(96, 80, 2.2)}" fill="none" stroke="${K.foam}" stroke-width=".9" opacity=".9"/>`;
+          return wrapF(id, ppu, g);
+        };
+        D.pirate = (o = {}) => {
+          const ppu = o.ppu ?? ppuOf('pirate'), id = uid('p'), I = K.ink, ow = K.ow;
+          const HP = 'M50 4L69 40L65 90L50 97L35 90L31 40Z';
+          const sailD = 'M6 38Q50 26 94 38L94 68L85 72L76 67L67 72L58 67L50 72L42 67L33 72L24 67L15 72L6 68Z';
+          let g = `<path d="${HP}" fill="${K.pirate}" stroke="${K.seaLight}" stroke-width="${2.6 * ow}" stroke-linejoin="round"/><path d="${HP}" fill="none" stroke="${I}" stroke-width="${1.2 * ow}" stroke-linejoin="round"/>
+            <path d="${HP}" transform="translate(50 52) scale(.62 .78) translate(-50 -52)" fill="${K.pirateDeck}" stroke="${I}" stroke-width="1"/>
+            <path d="M44 22V84M50 22V84M56 22V84" stroke="${I}" stroke-width=".6" opacity=".5"/>
+            ${[50, 62, 74].map((y) => `<rect x="27" y="${y}" width="7" height="4.6" rx="1.8" fill="#3c4568" stroke="${I}" stroke-width="1"/><rect x="66" y="${y}" width="7" height="4.6" rx="1.8" fill="#3c4568" stroke="${I}" stroke-width="1"/>`).join('')}
+            <rect x="41" y="78" width="18" height="10" rx="2.4" fill="${K.wood.dark}" stroke="${I}" stroke-width="1.2"/><circle cx="50" cy="83" r="2" fill="${K.lantern}" stroke="${I}" stroke-width=".7"/>
+            <path d="M50 22V40" stroke="${K.wood.dark}" stroke-width="3"/>
+            <path d="${sailD}" transform="translate(1.2 2.6)" fill="${I}" opacity=".3"/><path d="${sailD}" fill="${K.danger}"/>
+            <g clip-path="url(#${id}s)"><path d="M0 60Q50 48 100 60V80H0Z" fill="${K.dangerDark}" opacity=".7"/><path d="M24 30V74M76 30V74M50 30V74" stroke="${K.dangerDark}" stroke-width=".9" opacity=".7"/><path d="M12 38.6Q50 27.6 88 38.6" fill="none" stroke="#fff" stroke-width="1.4" opacity=".55" stroke-linecap="round"/></g>
+            <path d="${sailD}" fill="none" stroke="${I}" stroke-width="${2.6 * ow}" stroke-linejoin="round"/>
+            <path d="M40 40L60 60M60 40L40 60" stroke="${I}" stroke-width="6" stroke-linecap="round"/><path d="M40 40L60 60M60 40L40 60" stroke="#fff" stroke-width="3.4" stroke-linecap="round"/>
+            <path d="${circle(50, 49, 10.5)}" fill="#fff" stroke="${I}" stroke-width="${1.6 * ow}"/><path d="M44 57H56V64Q50 66 44 64Z" fill="#fff" stroke="${I}" stroke-width="${1.4 * ow}" stroke-linejoin="round"/>
+            <path d="${circle(45.6, 48, 3.1) + circle(54.4, 48, 3.1)}" fill="${I}"/><path d="M50 52L48.6 55.4H51.4Z" fill="${I}"/><path d="M47 58V63M50 58V63.6M53 58V63" stroke="${I}" stroke-width=".9"/>
+            <path d="M50 4L50 20L70 12Z" fill="#14162e" stroke="${I}" stroke-width="${1.6 * ow}" stroke-linejoin="round"/><circle cx="58" cy="12.6" r="2" fill="#fff"/>`;
+          return wrapF(id, ppu, g, `<clipPath id="${id}s"><path d="${sailD}"/></clipPath>`);
+        };
+        D.mermaid = (o = {}) => {
+          const ppu = o.ppu ?? ppuOf('mermaid'), id = uid('m'), I = K.ink, ow = K.ow;
+          const TAIL = 'M20 37C9 42 9 54 15 62L20 56L25 62C31 54 31 42 20 37Z';
+          let scales = ''; for (let r = 0; r < 4; r++) for (let x = 6 + (r % 2) * 2.4; x < 34; x += 4.8) scales += `M${f(x)} ${40 + r * 5}q2.4 2.6 4.8 0`;
+          let g = `<circle cx="6" cy="20" r="2" fill="none" stroke="${K.foam}" stroke-width=".6"/><circle cx="35" cy="10" r="1.5" fill="none" stroke="${K.foam}" stroke-width=".6"/><circle cx="7" cy="42" r="1.2" fill="none" stroke="${K.foam}" stroke-width=".6"/>
+            <path d="M11 27Q9 14 20 13Q31 14 29 27Q31 36 26 41Q24 34 20 34Q16 34 14 41Q9 36 11 27Z" fill="${K.hair}" stroke="${I}" stroke-width="${1.6 * ow}" stroke-linejoin="round"/>
+            <path d="M12 28Q11 33 13.6 38M28 28Q29 33 26.4 38" fill="none" stroke="${K.hairDark}" stroke-width=".8" stroke-linecap="round"/>
+            <path d="M14.5 30Q20 28 25.5 30L25 39Q20 42 15 39Z" fill="${K.skin}" stroke="${I}" stroke-width="${1.4 * ow}" stroke-linejoin="round"/>
+            <path d="${TAIL}" fill="${K.mermaid}" stroke="${I}" stroke-width="${1.8 * ow}" stroke-linejoin="round"/>
+            <g clip-path="url(#${id}t)"><rect x="20" y="30" width="20" height="36" fill="${K.mermaidDark}" opacity=".3"/><path d="${scales}" fill="none" stroke="${K.mermaidDark}" stroke-width=".8" opacity=".9" stroke-linecap="round"/><path d="M13 44Q12 50 15 56" fill="none" stroke="#fff" stroke-width="1" opacity=".5" stroke-linecap="round"/></g>
+            <path d="M16.2 59.6L17.4 56.4M23.8 59.6L22.6 56.4" stroke="${K.mermaidDark}" stroke-width=".7" stroke-linecap="round"/>
+            <path d="M14.8 31Q11 35 13 39" fill="none" stroke="${I}" stroke-width="4.4" stroke-linecap="round"/><path d="M14.8 31Q11 35 13 39" fill="none" stroke="${K.skin}" stroke-width="2.6" stroke-linecap="round"/>
+            <path d="M25.2 31.4Q30 32.4 31.6 33.6" fill="none" stroke="${I}" stroke-width="4.4" stroke-linecap="round"/><path d="M25.2 31.4Q30 32.4 31.6 33.6" fill="none" stroke="${K.skin}" stroke-width="2.6" stroke-linecap="round"/>
+            <circle cx="17.6" cy="34.4" r="3" fill="#ff8fb1" stroke="${I}" stroke-width="1"/><circle cx="22.4" cy="34.4" r="3" fill="#ff8fb1" stroke="${I}" stroke-width="1"/><path d="M17.6 32.2V36.4M22.4 32.2V36.4M16 33.4V35.4M19.2 33.4V35.4M20.8 33.4V35.4M24 33.4V35.4" stroke="#d85b86" stroke-width=".5"/>
+            <circle cx="33.6" cy="32" r="5.2" fill="${K.pearl}" stroke="${I}" stroke-width="${1.5 * ow}"/><path d="${arc(33.6, 32, 3.6, 20, 120)}" fill="none" stroke="#c9b8f0" stroke-width="1.2" stroke-linecap="round"/><circle cx="31.8" cy="30" r="1.3" fill="#fff"/>
+            <circle cx="20" cy="24.5" r="7.3" fill="${K.skin}" stroke="${I}" stroke-width="${1.8 * ow}"/>
+            <path d="M12.8 24.4Q13 16.4 20 16.4Q27 16.4 27.2 24.4Q23 20.4 19 20Q15 20.4 12.8 24.4Z" fill="${K.hair}" stroke="${I}" stroke-width="${1.2 * ow}" stroke-linejoin="round"/>
+            <ellipse cx="17.2" cy="25.4" rx=".95" ry="1.3" fill="${I}"/><ellipse cx="22.8" cy="25.4" rx=".95" ry="1.3" fill="${I}"/><circle cx="17.5" cy="24.9" r=".35" fill="#fff"/><circle cx="23.1" cy="24.9" r=".35" fill="#fff"/>
+            <path d="M15.6 24.4l-.9-.6M24.4 24.4l.9-.6" stroke="${I}" stroke-width=".6" stroke-linecap="round"/><circle cx="15.4" cy="27.8" r="1.4" fill="#ff9aa2" opacity=".6"/><circle cx="24.6" cy="27.8" r="1.4" fill="#ff9aa2" opacity=".6"/>
+            <path d="M18.4 28.6Q20 30 21.6 28.6" fill="none" stroke="${I}" stroke-width="1" stroke-linecap="round"/>
+            <circle cx="14.8" cy="19.6" r="1.7" fill="#ff8fb1" stroke="${I}" stroke-width=".7"/>`;
+          return wrapF(id, ppu, g, `<clipPath id="${id}t"><path d="${TAIL}"/></clipPath>`);
+        };
+        D.crate = (role, o = {}) => {
+          const ppu = o.ppu ?? ppuOf('crate'), id = uid('cr'), I = K.ink;
+          const base = { fund: K.rep.base, cargo: K.gold, profit: K.ok2, repair: K.danger }[role], dark = { fund: K.rep.dark, cargo: '#b88a10', profit: K.ok.dark, repair: K.dangerDark }[role];
+          const gc = role === 'cargo' || role === 'profit' ? I : '#fff';
+          const g = `<path d="${CRATE}" fill="${base}"/><g clip-path="url(#${id}c)"><path d="M3 9.2H21M3 14.8H21" stroke="${dark}" stroke-width="1" opacity=".8"/><rect x="3" y="17" width="18" height="5" fill="${dark}" opacity=".35"/><path d="M5.6 5.8H18.4" stroke="#fff" stroke-width="1.1" stroke-linecap="round" opacity=".6"/><path d="M3.5 3.5l4 0M3.5 3.5l0 4M20.5 3.5l-4 0M20.5 3.5l0 4M3.5 20.5l4 0M3.5 20.5l0-4M20.5 20.5l-4 0M20.5 20.5l0-4" stroke="${dark}" stroke-width="2.2"/></g><path d="${CRATE}" fill="none" stroke="${I}" stroke-width="${1.5 * K.ow}"/><path d="${GLYPH[role]}" fill="none" stroke="${gc}" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>`;
+          return wrapF(id, ppu, g, `<clipPath id="${id}c"><path d="${CRATE}"/></clipPath>`);
+        };
+        D.sea = (w, h) => {
+          const id = uid('sea'), r = rng(K.id === 3 ? 21 : 5); let s = '';
+          const painter = K.id === 3;
+          s += `<defs>${painter ? K.grain(id + 'g', 1) : ''}${painter ? K.filter(id + 'r', 1) : ''}<radialGradient id="${id}v" cx=".5" cy=".5" r=".75"><stop offset=".6" stop-color="#000" stop-opacity="0"/><stop offset="1" stop-color="#2a1b3d" stop-opacity=".45"/></radialGradient></defs>`;
+          s += `<g${painter ? ` filter="url(#${id}g)"` : ''}><rect width="${w}" height="${h}" fill="${K.sea}"/>`;
+          const patch = painter ? ['#3a98b4', '#27758f', '#4aa8b8'] : [K.seaLight];
+          s += `<g${painter ? ` filter="url(#${id}r)"` : ''}>`;
+          for (let i = 0; i < 9; i++) s += `<ellipse cx="${f(r() * w)}" cy="${f(r() * h)}" rx="${f(30 + r() * 50)}" ry="${f(14 + r() * 22)}" fill="${patch[i % patch.length]}" opacity="${painter ? 0.5 : 0.2}"/>`;
+          s += '</g>';
+          for (let i = 0; i < 16; i++) { const x = 34 + r() * (w - 50), y = 8 + r() * (h - 16), sz = 8 + r() * 6; s += `<path d="M${f(x)} ${f(y)}q${f(sz * 0.25)} ${f(-sz * 0.28)} ${f(sz * 0.5)} 0t${f(sz * 0.5)} 0" fill="none" stroke="${K.foam}" stroke-width="${painter ? f(1.2 + r() * 1.4) : 1.6}" stroke-linecap="round" opacity=".85"/>`; if (i % 2 === 0) s += `<path d="M${f(x + sz * 0.3)} ${f(y + 4.5)}q${f(sz * 0.18)} ${f(-sz * 0.18)} ${f(sz * 0.36)} 0" fill="none" stroke="${K.foam}" stroke-width="1.1" stroke-linecap="round" opacity=".55"/>`; }
+          if (!painter) for (let i = 0; i < 10; i++) { const x = 30 + r() * (w - 40), y = 6 + r() * (h - 12); s += `<path d="M${f(x)} ${f(y - 2.4)}L${f(x + 0.7)} ${f(y - 0.7)}L${f(x + 2.4)} ${f(y)}L${f(x + 0.7)} ${f(y + 0.7)}L${f(x)} ${f(y + 2.4)}L${f(x - 0.7)} ${f(y + 0.7)}L${f(x - 2.4)} ${f(y)}L${f(x - 0.7)} ${f(y - 0.7)}Z" fill="#fff" opacity=".7"/>`; }
+          s += [h / 3, (2 * h) / 3].map((y) => `<path d="M26 ${y}H${w}" stroke="${painter ? K.ink : K.seaLight}" stroke-width="${painter ? 1.8 : 1.6}" stroke-dasharray="${painter ? '0.5 7' : '7 6'}" stroke-linecap="round" opacity="${painter ? 0.5 : 0.7}"/>`).join('');
+          s += `<path d="${shorePath(h, 24)}" fill="${K.sandDark}" transform="translate(-3 0)"/><path d="${shorePath(h, 22)}" fill="${K.sand}"/>`;
+          for (let i = 0; i < 18; i++) s += `<circle cx="${f(2 + r() * 14)}" cy="${f(r() * h)}" r="${f(0.8 + r() * 1.2)}" fill="${K.sandDark}" opacity=".8"/>`;
+          if (painter) for (let i = 0; i < 22; i++) { const y = r() * h; s += `<path d="M${f(2 + r() * 8)} ${f(y)}l5 -3" stroke="${K.sandDark}" stroke-width=".8" opacity=".6"/>`; }
+          s += `<path d="${shorePath(h, 22, 5, false)}" fill="none" stroke="${K.foam}" stroke-width="${painter ? 3 : 2.4}" stroke-linecap="round"/><path d="${shorePath(h, 25, 5, false)}" fill="none" stroke="${K.foam}" stroke-width="1.2" stroke-linecap="round" opacity=".6" stroke-dasharray="6 5"/></g>`;
+          if (painter) s += `<rect width="${w}" height="${h}" fill="url(#${id}v)"/>`;
+          return s;
+        };
+        D.gust = (x, y) => `<g fill="none" stroke="${K.foam}" stroke-width="${K.id === 3 ? 2.4 : 2}" stroke-linecap="round" opacity=".88"><path d="M${x} ${y}h60q10 0 10-8"/><path d="M${x + 10} ${y + 14}h70q10 0 10 8"/><path d="M${x} ${y + 30}h50"/></g>`;
+        return D;
+      }
+      const B = makeDetail(KB);
+      const Dd = makeDetail(KD);
+
+      // ================================================================== C: soft gloss (gradients, soft shadows, rim light)
+      const C = { id: 2 };
+      const lin = (id, stops, x1 = 0, y1 = 0, x2 = 0, y2 = 1) => `<linearGradient id="${id}" x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}">${stops.map(([o, c, a]) => `<stop offset="${o}" stop-color="${c}"${a != null ? ` stop-opacity="${a}"` : ''}/>`).join('')}</linearGradient>`;
+      const rad = (id, stops, cx = 0.5, cy = 0.5, r = 0.5, fx, fy) => `<radialGradient id="${id}" cx="${cx}" cy="${cy}" r="${r}"${fx != null ? ` fx="${fx}" fy="${fy}"` : ''}>${stops.map(([o, c, a]) => `<stop offset="${o}" stop-color="${c}"${a != null ? ` stop-opacity="${a}"` : ''}/>`).join('')}</radialGradient>`;
+      const shadow = (id, dy, sd, op = 0.45) => `<filter id="${id}" x="-25%" y="-25%" width="150%" height="160%"><feDropShadow dx="0" dy="${dy}" stdDeviation="${sd}" flood-color="#021a44" flood-opacity="${op}"/></filter>`;
+      const blur = (id, sd) => `<filter id="${id}" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="${sd}"/></filter>`;
+      const CPAL = {
+        normal: { hi: '#f4b27a', base: '#c8763a', dark: '#85441f', out: '#4e2610', deck: '#f2b985' },
+        arrived: { hi: '#a4f5c0', base: '#3ecf6e', dark: '#1f8044', out: '#10492a', deck: '#b4f7cb' },
+        repaired: { hi: '#b9deff', base: '#4aa8ff', dark: '#2565a8', out: '#123c68', deck: '#cae5ff' },
+        lost: { hi: '#d0d5e3', base: '#8b93a8', dark: '#565d72', out: '#363c4e', deck: '#d8dce8' },
+      };
+      C.ship = (o = {}) => {
+        const { sail = 0, scale = 1, state = 'normal' } = o, id = uid('c'), p = CPAL[state];
+        const hw = Math.min(11, 8.2 * scale), x0 = 12 - hw, x1 = 12 + hw, acc = sailCols[((sail % 3) + 3) % 3];
+        const accHi = { [T.danger]: '#ff8a8e', [T.repaired]: '#9ccfff', [T.gold]: '#ffe680' }[acc], accDk = { [T.danger]: '#b8343a', [T.repaired]: '#2f7ccc', [T.gold]: '#d9a400' }[acc];
+        const sailD = `M${f(x0)} 9.2Q12 7.2 ${f(x1)} 9.2L${f(x1)} 13.4Q12 11.4 ${f(x0)} 13.4Z`;
+        let defs = lin(id + 'h', [[0, p.hi], [0.42, p.base], [1, p.dark]], 0, 0, 1, 0) + lin(id + 'd', [[0, p.deck], [1, p.base]], 0, 0, 1, 0) + shadow(id + 'ds', 1.2, 0.9, 0.5) + blur(id + 'b', 0.3) + `<clipPath id="${id}hc"><path d="${HULL}"/></clipPath>`;
+        let g = '';
+        if (state !== 'lost') g += `<path d="M7.2 6.2Q5.2 9.6 6 13.8M16.8 6.2Q18.8 9.6 18 13.8" fill="none" stroke="#fff" stroke-width="1.3" stroke-linecap="round" opacity=".75" filter="url(#${id}b)"/><path d="M7.4 6.4Q5.4 9.6 6.2 13.6M16.6 6.4Q18.6 9.6 17.8 13.6" fill="none" stroke="#fff" stroke-width=".7" stroke-linecap="round" opacity=".9"/>`;
+        g += `<g filter="url(#${id}ds)"><path d="${HULL}" fill="url(#${id}h)" stroke="${p.out}" stroke-width=".9" stroke-linejoin="round"/>
+          <path d="${HULL}" transform="translate(12 12.1) scale(.56 .8) translate(-12 -12.1)" fill="url(#${id}d)" stroke="${p.dark}" stroke-width=".5" opacity=".95"/>
+          <path d="M9.4 5.4Q8.4 11 9 18" fill="none" stroke="#fff" stroke-width=".7" stroke-linecap="round" opacity=".55"/>
+          <circle cx="12" cy="4" r="1.35" fill="${p.dark}" stroke="${p.out}" stroke-width=".4"/><circle cx="11.6" cy="3.6" r=".45" fill="#fff" opacity=".8"/><circle cx="12" cy="20.5" r="1" fill="#ffe27a" stroke="${p.out}" stroke-width=".3"/></g>`;
+        if (state === 'lost') {
+          g += `<path d="M7.8 8.6L16.2 17.4M16.2 8.6L7.8 17.4" stroke="#fff" stroke-width="2.6" stroke-linecap="round" opacity=".9"/><path d="M7.8 8.6L16.2 17.4M16.2 8.6L7.8 17.4" stroke="${p.out}" stroke-width="1.7" stroke-linecap="round"/>`;
+        } else {
+          defs += lin(id + 'sg', [[0, '#ffffff'], [0.6, '#fdf3da'], [1, '#e9d9b2']]) + lin(id + 'sh', [[0, '#fff', 0], [1, '#1a3a70', 0.22]], 0, 0, 1, 0) + lin(id + 'ac', [[0, accHi], [0.5, acc], [1, accDk]]) + `<clipPath id="${id}sc"><path d="${sailD}"/></clipPath>` + rad(id + 'm', [[0, '#f0b078'], [1, p.dark]], 0.35, 0.3, 0.8);
+          g += `<g filter="url(#${id}ds)"><path d="${sailD}" fill="url(#${id}sg)"/><g clip-path="url(#${id}sc)"><rect x="${f(12 - hw * 0.3)}" y="6" width="${f(hw * 0.6)}" height="10" fill="url(#${id}ac)"/><rect x="0" y="6" width="24" height="10" fill="url(#${id}sh)"/><path d="M0 12.4Q12 10.4 24 12.4V16H0Z" fill="#a9c4e8" opacity=".35"/><path d="${`M${f(x0 + 1)} 9.6Q12 7.9 ${f(x1 - 1)} 9.6`}" stroke="#fff" stroke-width=".8" fill="none" opacity=".9" stroke-linecap="round"/></g>
+            <path d="${sailD}" fill="none" stroke="#6b5a3a" stroke-width=".6" stroke-linejoin="round"/><circle cx="12" cy="10.7" r="1.1" fill="url(#${id}m)" stroke="${p.out}" stroke-width=".35"/></g>`;
+        }
+        if (state === 'repaired') g += `<g filter="url(#${id}ds)"><circle cx="18.4" cy="18.4" r="5.2" fill="#0b2f78" stroke="#fff" stroke-width="1"/><circle cx="18.4" cy="18.4" r="4.2" fill="#1a55c8" opacity=".8"/></g><path d="${WRENCH}" transform="translate(14 13.6) scale(.4)" fill="none" stroke="#fff" stroke-width="3.4" stroke-linejoin="round"/>`;
+        return `<defs>${defs}</defs>${g}`;
+      };
+      C.storm = () => {
+        const id = uid('cst'); let defs = shadow(id + 'ds', 4, 3, 0.5) + blur(id + 'gl', 4) + blur(id + 'bl', 2.5), g = '';
+        defs += rad(id + 'g', [[0, '#c4cdf5'], [0.45, '#7482c8'], [1, '#444f92']], 0.4, 0.28, 0.85) + lin(id + 'b', [[0, '#ffe884'], [0.6, '#ffc61a'], [1, '#f59e0b']]) + lin(id + 'r', [[0, '#e6f4ff', 0], [1, '#e6f4ff', 0.9]]);
+        g += `<g filter="url(#${id}ds)"><path d="${STORM_LOBES.map((l) => circle(l.x, l.y + 5, l.r)).join('')}" fill="#2c3668" stroke="#2c3668" stroke-width="2.2" stroke-linejoin="round"/>`;
+        for (const i of STORM_ORDER) { const l = STORM_LOBES[i]; g += `<circle cx="${l.x}" cy="${l.y}" r="${l.r}" fill="url(#${id}g)"/>`; }
+        g += '</g>';
+        for (const i of STORM_ORDER) { const l = STORM_LOBES[i]; g += `<path d="${arc(l.x, l.y, l.r - 3, 200, 280)}" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round" opacity=".35"/>`; }
+        let rain = ''; for (let x = 36; x <= 232; x += 21) rain += `<path d="M${x} ${91 + (x % 3)}l-3.6 10" stroke="url(#${id}r)" stroke-width="2.6" stroke-linecap="round"/>`;
+        g += rain + `<path d="${BOLT}" transform="translate(168 64) scale(1.1)" fill="#ffd54a" filter="url(#${id}gl)" opacity=".9"/><path d="${BOLT}" transform="translate(168 64) scale(1.1)" fill="url(#${id}b)" stroke="#a86b00" stroke-width=".8" stroke-linejoin="round"/><path d="M8.6 3.6L4.6 11.4" transform="translate(168 64) scale(1.1)" stroke="#fff" stroke-width="1.2" stroke-linecap="round" opacity=".8"/>`;
+        const fx = 130, fy = 46;
+        defs += rad(id + 'e', [[0, '#fff'], [1, '#dfe6ff']], 0.4, 0.35, 0.7);
+        g += `<circle cx="${fx - 20}" cy="${fy + 11}" r="5.5" fill="#ff9bb0" opacity=".55" filter="url(#${id}bl)"/><circle cx="${fx + 20}" cy="${fy + 11}" r="5.5" fill="#ff9bb0" opacity=".55" filter="url(#${id}bl)"/>
+          <circle cx="${fx - 12}" cy="${fy - 4}" r="7.8" fill="url(#${id}e)" stroke="#2c3668" stroke-width="1.2"/><circle cx="${fx + 12}" cy="${fy - 4}" r="7.8" fill="url(#${id}e)" stroke="#2c3668" stroke-width="1.2"/>
+          <circle cx="${fx - 10.4}" cy="${fy - 3}" r="3.6" fill="#1b2350"/><circle cx="${fx + 10.4}" cy="${fy - 3}" r="3.6" fill="#1b2350"/><circle cx="${fx - 9.4}" cy="${fy - 4.4}" r="1.3" fill="#fff"/><circle cx="${fx + 11.4}" cy="${fy - 4.4}" r="1.3" fill="#fff"/>
+          <path d="M${fx - 22} ${fy - 17}L${fx - 6} ${fy - 11}M${fx + 22} ${fy - 17}L${fx + 6} ${fy - 11}" stroke="#222b5e" stroke-width="3.4" stroke-linecap="round"/>
+          <path d="M${fx - 9} ${fy + 14}Q${fx} ${fy + 6} ${fx + 9} ${fy + 14}" fill="none" stroke="#222b5e" stroke-width="3" stroke-linecap="round"/>`;
+        return `<defs>${defs}</defs>${g}`;
+      };
+      C.kraken = () => {
+        const id = uid('ck'); let defs = shadow(id + 'ds', 3, 2.4, 0.5) + blur(id + 'bl', 1.6) + lin(id + 't', [[0, '#b278e4'], [1, '#6a35a0']]) + rad(id + 'h', [[0, '#d6a2fa'], [0.5, '#9a58d2'], [1, '#55288a']], 0.38, 0.3, 0.85) + rad(id + 'e', [[0, '#fff'], [1, '#e1e4ff']], 0.4, 0.35, 0.7) + rad(id + 'i', [[0, '#fff3a0'], [0.6, '#ffc61a'], [1, '#e08a00']], 0.4, 0.35, 0.7) + rad(id + 's', [[0, '#fff'], [1, '#f1b8ff']], 0.35, 0.3, 0.8);
+        let g = `<g filter="url(#${id}ds)">`;
+        for (const t of TENT) g += `<path d="${taper(t, 15, 4.6)}" fill="url(#${id}t)" stroke="#3b1a63" stroke-width="1.3" stroke-linejoin="round"/>`;
+        g += '</g>';
+        for (const t of TENT) {
+          g += `<path d="${line(t)}" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" opacity=".18" transform="translate(-1.4 -1.2)"/>`;
+          for (let i = 0; i < 5; i++) { const [x, y] = bez(t, 0.3 + i * 0.13); const r = 2.5 - i * 0.32; g += `<circle cx="${f(x)}" cy="${f(y)}" r="${f(r)}" fill="url(#${id}s)" stroke="#6a2f9c" stroke-width=".6"/><circle cx="${f(x)}" cy="${f(y)}" r="${f(r * 0.38)}" fill="#c98af0"/>`; }
+        }
+        g += `<g filter="url(#${id}ds)"><circle cx="60" cy="50" r="27" fill="url(#${id}h)" stroke="#3b1a63" stroke-width="1.6"/></g>
+          <ellipse cx="50" cy="32" rx="12" ry="6" fill="#fff" opacity=".32" transform="rotate(-24 50 32)" filter="url(#${id}bl)"/>
+          <path d="${circle(47, 31, 2.8) + circle(60, 28, 2) + circle(72, 32, 2.4) + circle(37, 40, 1.8)}" fill="#4a2278" opacity=".28"/>`;
+        for (const [cx, dir] of [[49, 1], [71, -1]]) {
+          g += `<circle cx="${cx}" cy="45" r="9" fill="url(#${id}e)" stroke="#3b1a63" stroke-width="1.4"/><circle cx="${cx + dir * 1.5}" cy="46" r="5.4" fill="url(#${id}i)"/><ellipse cx="${cx + dir * 1.5}" cy="46" rx="1.8" ry="4.2" fill="#2a1048"/><circle cx="${cx + dir * 0.2}" cy="43.4" r="1.6" fill="#fff"/><circle cx="${cx + dir * 3.2}" cy="48.2" r=".8" fill="#fff" opacity=".8"/>
+            <path d="M${cx - dir * 10} 37.6Q${cx} ${f(35.4)} ${cx + dir * 10} 42.6L${cx + dir * 10} 33L${cx - dir * 10} 33Z" fill="#9a58d2" opacity="0"/>`;
+          g += `<path d="M${cx - dir * 9.2} 40Q${cx} 38 ${cx + dir * 9.2} 45" fill="none" stroke="#3b1a63" stroke-width="2.4" stroke-linecap="round"/>`;
+        }
+        g += `<path d="M50 62Q60 69 70 62" fill="none" stroke="#3b1a63" stroke-width="2" stroke-linecap="round"/><path d="M54 64.6L55.4 67.6L56.8 65.4M63.2 65.4L64.6 67.6L66 64.6" fill="#fff" stroke="#3b1a63" stroke-width=".6" stroke-linejoin="round"/>`;
+        for (const [x, y, r] of [[20, 30, 2.2], [14, 54, 1.8], [24, 80, 2.4], [100, 30, 2.2], [106, 54, 1.8], [96, 80, 2.4]]) g += `<circle cx="${x}" cy="${y}" r="${r}" fill="#fff" fill-opacity=".18" stroke="#fff" stroke-width=".7" opacity=".9"/><circle cx="${x - r * 0.35}" cy="${y - r * 0.35}" r="${f(r * 0.28)}" fill="#fff"/>`;
+        return `<defs>${defs}</defs>${g}`;
+      };
+      C.pirate = () => {
+        const id = uid('cp'), HP = 'M50 4L69 40L65 90L50 97L35 90L31 40Z', sailD = 'M6 38Q50 26 94 38L94 68Q50 56 6 68Z';
+        const defs = shadow(id + 'ds', 3, 2.4, 0.5) + lin(id + 'h', [[0, '#3a4a8a'], [0.5, '#1a2352'], [1, '#0a1238']], 0, 0, 1, 0) + lin(id + 'd', [[0, '#a07650'], [1, '#6b4a33']], 0, 0, 1, 0) + lin(id + 's', [[0, '#ff7a7e'], [0.55, '#e5484d'], [1, '#a82f34']]) + lin(id + 'sh', [[0, '#fff', 0.35], [0.3, '#fff', 0], [1, '#400', 0.25]], 0, 0, 1, 0.2) + rad(id + 'k', [[0, '#fff'], [1, '#e2dccf']], 0.4, 0.3, 0.8) + lin(id + 'c', [[0, '#8a96c0'], [1, '#2c3568']]) + blur(id + 'bl', 1.4);
+        const g = `<g filter="url(#${id}ds)"><path d="${HP}" fill="url(#${id}h)" stroke="#6cc1f0" stroke-width="2" stroke-linejoin="round"/>
+          <path d="${HP}" transform="translate(50 52) scale(.62 .78) translate(-50 -52)" fill="url(#${id}d)" stroke="#2b1c10" stroke-width=".8"/><path d="M44 22V84M50 22V84M56 22V84" stroke="#3b2a1c" stroke-width=".6" opacity=".5"/>
+          ${[50, 62, 74].map((y) => `<rect x="27" y="${y}" width="7" height="4.6" rx="2" fill="url(#${id}c)" stroke="#0a1238" stroke-width=".8"/><rect x="66" y="${y}" width="7" height="4.6" rx="2" fill="url(#${id}c)" stroke="#0a1238" stroke-width=".8"/>`).join('')}
+          <rect x="41" y="78" width="18" height="10" rx="2.6" fill="#8a4a22" stroke="#3b2a1c" stroke-width="1"/><circle cx="50" cy="83" r="2.2" fill="#ffe27a"/><circle cx="50" cy="83" r="4" fill="#ffd54a" opacity=".45" filter="url(#${id}bl)"/>
+          <path d="M50 22V40" stroke="#6b3a1a" stroke-width="3"/></g>
+          <g filter="url(#${id}ds)"><path d="${sailD}" fill="url(#${id}s)"/><path d="${sailD}" fill="url(#${id}sh)"/><path d="M24 30V74M76 30V74" stroke="#7a1e24" stroke-width=".8" opacity=".35"/><path d="M14 38.6Q50 27.8 86 38.6" fill="none" stroke="#fff" stroke-width="1.6" opacity=".55" stroke-linecap="round"/><path d="${sailD}" fill="none" stroke="#5a1418" stroke-width="1.2" stroke-linejoin="round"/></g>
+          <path d="M40 40L60 60M60 40L40 60" stroke="#6b5a3a" stroke-width="5.4" stroke-linecap="round"/><path d="M40 40L60 60M60 40L40 60" stroke="#f4eee0" stroke-width="3.6" stroke-linecap="round"/>
+          <path d="${circle(50, 49, 10.5)}" fill="url(#${id}k)" stroke="#6b5a3a" stroke-width="1"/><path d="M44 57H56V64Q50 66 44 64Z" fill="url(#${id}k)" stroke="#6b5a3a" stroke-width="1" stroke-linejoin="round"/>
+          <path d="${circle(45.6, 48, 3.1) + circle(54.4, 48, 3.1)}" fill="#1b1d36"/><path d="M50 52L48.6 55.4H51.4Z" fill="#1b1d36"/><path d="M47 58V63M50 58V63.6M53 58V63" stroke="#8b8470" stroke-width=".8"/>
+          <path d="M50 4L50 20L70 12Z" fill="#1d1f3c" stroke="#05060f" stroke-width="1.2" stroke-linejoin="round"/><circle cx="58" cy="12.6" r="2" fill="#f4eee0"/>`;
+        return `<defs>${defs}</defs>${g}`;
+      };
+      C.mermaid = () => {
+        const id = uid('cm'), TAIL = 'M20 37C9 42 9 54 15 62L20 56L25 62C31 54 31 42 20 37Z';
+        let scales = ''; for (let r = 0; r < 4; r++) for (let x = 6 + (r % 2) * 2.4; x < 34; x += 4.8) scales += `M${f(x)} ${40 + r * 5}q2.4 2.6 4.8 0`;
+        const defs = shadow(id + 'ds', 1.6, 1.4, 0.45) + blur(id + 'bl', 2) + lin(id + 't', [[0, '#5eead8'], [0.5, '#1fb5a6'], [1, '#0d756c']], 0, 0, 1, 0.3) + lin(id + 'h', [[0, '#ffc15a'], [1, '#d97a00']], 0, 0, 0.6, 1) + rad(id + 'sk', [[0, '#fff0e0'], [1, '#ffc99c']], 0.4, 0.3, 0.8) + rad(id + 'pe', [[0, '#fff'], [0.55, '#ece3ff'], [1, '#b6a2ec']], 0.35, 0.3, 0.8) + `<clipPath id="${id}t"><path d="${TAIL}"/></clipPath>`;
+        const g = `<circle cx="33.6" cy="32" r="8.5" fill="#fff" opacity=".55" filter="url(#${id}bl)"/>
+          <g filter="url(#${id}ds)"><path d="M11 27Q9 14 20 13Q31 14 29 27Q31 36 26 41Q24 34 20 34Q16 34 14 41Q9 36 11 27Z" fill="url(#${id}h)" stroke="#8a4a00" stroke-width=".9" stroke-linejoin="round"/>
+          <path d="M14.5 30Q20 28 25.5 30L25 39Q20 42 15 39Z" fill="url(#${id}sk)" stroke="#b97a50" stroke-width=".8" stroke-linejoin="round"/>
+          <path d="${TAIL}" fill="url(#${id}t)" stroke="#0a5a52" stroke-width="1" stroke-linejoin="round"/></g>
+          <g clip-path="url(#${id}t)"><path d="${scales}" fill="none" stroke="#c9fff7" stroke-width=".7" opacity=".5" stroke-linecap="round"/><path d="M13 44Q12 50 15 56" fill="none" stroke="#fff" stroke-width="1.4" opacity=".5" stroke-linecap="round"/></g>
+          <path d="M14.8 31Q11 35 13 39" fill="none" stroke="#b97a50" stroke-width="3.2" stroke-linecap="round"/><path d="M14.8 31Q11 35 13 39" fill="none" stroke="url(#${id}sk)" stroke-width="2.6" stroke-linecap="round"/>
+          <path d="M25.2 31.4Q30 32.4 31.6 33.6" fill="none" stroke="#b97a50" stroke-width="3.2" stroke-linecap="round"/><path d="M25.2 31.4Q30 32.4 31.6 33.6" fill="none" stroke="url(#${id}sk)" stroke-width="2.6" stroke-linecap="round"/>
+          <circle cx="17.6" cy="34.4" r="3" fill="#ff9dbd" stroke="#c4527c" stroke-width=".7"/><circle cx="22.4" cy="34.4" r="3" fill="#ff9dbd" stroke="#c4527c" stroke-width=".7"/><path d="M17.6 32.2V36.4M22.4 32.2V36.4" stroke="#e0709b" stroke-width=".5"/>
+          <circle cx="33.6" cy="32" r="5.2" fill="url(#${id}pe)" stroke="#9c8ad8" stroke-width=".8"/><circle cx="31.8" cy="30" r="1.4" fill="#fff"/><path d="${arc(33.6, 32, 3.6, 30, 110)}" fill="none" stroke="#f9b8e8" stroke-width="1" opacity=".8" stroke-linecap="round"/>
+          <g filter="url(#${id}ds)"><circle cx="20" cy="24.5" r="7.3" fill="url(#${id}sk)" stroke="#b97a50" stroke-width=".9"/></g>
+          <path d="M12.8 24.4Q13 16.4 20 16.4Q27 16.4 27.2 24.4Q23 20.4 19 20Q15 20.4 12.8 24.4Z" fill="url(#${id}h)" stroke="#8a4a00" stroke-width=".7" stroke-linejoin="round"/>
+          <ellipse cx="17.2" cy="25.4" rx="1" ry="1.35" fill="#3a2a40"/><ellipse cx="22.8" cy="25.4" rx="1" ry="1.35" fill="#3a2a40"/><circle cx="17.5" cy="24.9" r=".4" fill="#fff"/><circle cx="23.1" cy="24.9" r=".4" fill="#fff"/>
+          <path d="M15.6 24.4l-.9-.6M24.4 24.4l.9-.6" stroke="#3a2a40" stroke-width=".6" stroke-linecap="round"/><circle cx="15.4" cy="27.8" r="1.6" fill="#ff8a98" opacity=".5" filter="url(#${id}bl)"/><circle cx="24.6" cy="27.8" r="1.6" fill="#ff8a98" opacity=".5" filter="url(#${id}bl)"/>
+          <path d="M18.4 28.6Q20 30 21.6 28.6" fill="none" stroke="#9a4a52" stroke-width="1" stroke-linecap="round"/><circle cx="14.8" cy="19.6" r="1.7" fill="#ff9dbd" stroke="#c4527c" stroke-width=".5"/>
+          <g fill="#fff"><circle cx="6" cy="20" r="1.5" fill-opacity=".25" stroke="#fff" stroke-width=".5"/><circle cx="35" cy="10" r="1.2" fill-opacity=".25" stroke="#fff" stroke-width=".5"/><path d="M38 24l.6 1.6 1.6.6-1.6.6L38 28.4l-.6-1.6-1.6-.6 1.6-.6Z" opacity=".9"/></g>`;
+        return `<defs>${defs}</defs>${g}`;
+      };
+      C.crate = (role) => {
+        const id = uid('cc'), col = { fund: ['#a9d4ff', '#4aa8ff', '#2565a8'], cargo: ['#fff08a', '#ffcc00', '#c98f00'], profit: ['#a4f5c0', '#3ecf6e', '#1f8044'], repair: ['#ff9a9e', '#e5484d', '#9a2a30'] }[role], gc = role === 'cargo' || role === 'profit' ? '#1a3a20' : '#fff';
+        return `<defs>${lin(id + 'g', [[0, col[0]], [0.45, col[1]], [1, col[2]]])}${shadow(id + 'ds', 1, 0.8, 0.5)}</defs><g filter="url(#${id}ds)"><path d="${CRATE}" fill="url(#${id}g)" stroke="${col[2]}" stroke-width=".8"/></g><path d="M5.6 5.6H18.4" stroke="#fff" stroke-width="1.3" stroke-linecap="round" opacity=".7"/><path d="${GLYPH[role]}" fill="none" stroke="${gc}" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" ${gc === '#fff' ? 'opacity=".95"' : ''}/>`;
+      };
+      C.sea = (w, h) => {
+        const id = uid('cs'), r = rng(7);
+        let s = `<defs>${lin(id + 'g', [[0, '#4cbaf2'], [0.55, '#2a8fd0'], [1, '#1a64a4']], 0, 0, 0.4, 1)}${rad(id + 'l', [[0, '#fff', 0.3], [1, '#fff', 0]], 0.3, 0.2, 0.75)}${rad(id + 'v', [[0.55, '#021a44', 0], [1, '#021a44', 0.38]], 0.5, 0.5, 0.78)}${lin(id + 'sa', [[0, '#fbedc0'], [1, '#e6cb86']], 0, 0, 1, 0)}${blur(id + 'b', 6)}${blur(id + 'b2', 1.1)}</defs>`;
+        s += `<rect width="${w}" height="${h}" fill="url(#${id}g)"/><rect width="${w}" height="${h}" fill="url(#${id}l)"/><g filter="url(#${id}b)">`;
+        for (let i = 0; i < 10; i++) s += `<ellipse cx="${f(r() * w)}" cy="${f(r() * h)}" rx="${f(22 + r() * 34)}" ry="${f(3 + r() * 6)}" fill="#fff" opacity="${f(0.1 + r() * 0.1)}" transform="rotate(${f(-25 + r() * 20)} ${f(r() * w)} ${f(r() * h)})"/>`;
+        s += '</g><g filter="url(#' + id + 'b2)">';
+        for (let i = 0; i < 16; i++) { const x = 34 + r() * (w - 50), y = 8 + r() * (h - 16), sz = 9 + r() * 6; s += `<path d="M${f(x)} ${f(y)}q${f(sz * 0.25)} ${f(-sz * 0.3)} ${f(sz * 0.5)} 0t${f(sz * 0.5)} 0" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" opacity=".5"/>`; }
+        s += '</g>';
+        for (let i = 0; i < 16; i++) { const x = 34 + r() * (w - 50), y = 8 + r() * (h - 16), sz = 9 + r() * 6; s += `<path d="M${f(x)} ${f(y)}q${f(sz * 0.25)} ${f(-sz * 0.3)} ${f(sz * 0.5)} 0t${f(sz * 0.5)} 0" fill="none" stroke="#fff" stroke-width="1" stroke-linecap="round" opacity=".85"/>`; }
+        s += [h / 3, (2 * h) / 3].map((y) => `<path d="M26 ${y}H${w}" stroke="#fff" stroke-width="1.3" stroke-dasharray="6 8" stroke-linecap="round" opacity=".28"/>`).join('');
+        s += `<path d="${shorePath(h, 28, 5, false)} " fill="none" stroke="#bfe9ff" stroke-width="7" opacity=".35" filter="url(#${id}b2)"/><path d="${shorePath(h, 24)}" fill="#c9b070" opacity=".9"/><path d="${shorePath(h, 22)}" fill="url(#${id}sa)"/><path d="${shorePath(h, 22, 5, false)}" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round" opacity=".95"/>`;
+        s += `<rect width="${w}" height="${h}" fill="url(#${id}v)"/>`;
+        return s;
+      };
+      C.gust = (x, y) => `<g fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" opacity=".7"><path d="M${x} ${y}h60q10 0 10-8"/><path d="M${x + 10} ${y + 14}h70q10 0 10 8"/><path d="M${x} ${y + 30}h50"/></g>`;
+
+      // ================================================================== layout
+      const STYLES = [
+        { key: 'A', impl: A, ui: 'ui-a', cls: 'c0', title: 'A · Current', blurb: 'Flat colour, thick navy outline, one silhouette per object.', tags: [['Shipped'], ['Baseline']] },
+        { key: 'B', impl: B, ui: 'ui-b', cls: 'c1', title: 'B · Detailed Flat', blurb: 'Same flat language, but with planks, panels, tone blocks, rim highlights, stitched sails and richer faces.', tags: [['Still flat colour'], ['Cheap: Path2D'], ['Low risk']] },
+        { key: 'C', impl: C, ui: 'ui-c', cls: 'c2', title: 'C · Soft Gloss', blurb: 'Gradients, soft drop shadows, light rims, glossy highlights, glowing lightning and a lit sea.', tags: [['Polished mobile look'], ['Gradients: ch. 1 rule changes'], ['Sprite cache']] },
+        { key: 'D', impl: Dd, ui: 'ui-d', cls: 'c3', title: 'D · Storybook', blurb: 'Hand-inked wobbly outlines, paper grain, hatching and a warmer, painted palette.', tags: [['Most character'], ['Filters: pre-render to bitmap', 'warn'], ['Palette change']] },
+      ];
+
+      const place = (inner, x, y, s, rot, kind) => { const [w, h] = DIM[kind]; return `<g transform="translate(${x} ${y}) rotate(${rot}) scale(${s}) translate(${-w / 2} ${-h / 2})">${inner}</g>`; };
+      function sceneOf(S, seaFn) {
+        const I = S.impl, W = 320, H = 240; let s = seaFn ? seaFn() : I.sea(W, H);
+        const sc = 0.92, ppuShip = sc;
+        s += I.gust(48, 96);
+        const fleet = [[56, 96], [56, 120], [56, 144], [84, 108], [84, 132], [112, 96], [112, 120], [112, 144], [140, 108]];
+        if (seaFn) { const wid = uid('wk'); s += wakeDefs(wid) + fleet.map(([x, y]) => wake(x, y, sc, wid)).join(''); }
+        fleet.forEach(([x, y], i) => { s += place(I.ship({ sail: i, scale: [1, 1.2, 0.8, 1.1, 0.9][i % 5], ppu: ppuShip }), x, y, sc, 90, 'ship'); });
+        s += place(I.ship({ state: 'lost', ppu: 0.9 }), 108, 190, 0.9, 62, 'ship');
+        s += place(I.storm({ ppu: 0.62 }), 238, 44, 0.62, 0, 'storm');
+        s += place(I.pirate({ ppu: 0.7 }), 214, 124, 0.7, -90, 'pirate');
+        s += place(I.kraken({ ppu: 0.7 }), 258, 196, 0.7, 0, 'kraken');
+        s += place(I.mermaid({ ppu: 0.7 }), 168, 164, 0.7, 0, 'mermaid');
+        return `<svg viewBox="0 0 ${W} ${H}" width="${W}" overflow="hidden">${s}</svg>`;
+      }
+
+      // ================================================================== sea options (detailed-flat language, animated with CSS)
+      const SW = 320, SH = 240;
+      const SEA = { base: '#2c8fd0', light: '#52aee3', deep: '#1f6c9e', deeper: '#185b87', shallow: ['#3fb0d8', '#5cc6e0', '#86dcec'], sand: '#f3dfa2', sandDark: '#d4bb78' };
+      // three copies (-W, 0, +W): anything bleeding over a tile edge still loops without a pop
+      const tiles = (inner) => [-SW, 0, SW].map((dx) => `<g transform="translate(${dx} 0)">${inner}</g>`).join('');
+      const drift = (inner, secs, delay = 0) => `<g class="drift" style="animation-duration:${secs}s;animation-delay:-${delay}s">${tiles(inner)}</g>`;
+      const vband = (x0, bw, amp, k, ph) => {
+        const Lp = [], Rp = [];
+        for (let y = -6; y <= SH + 6; y += 6) { const o = amp * Math.sin((y / SH) * Math.PI * 2 * k + ph); Lp.push(`${f(x0 + o)} ${y}`); Rp.push(`${f(x0 + bw + o)} ${y}`); }
+        return { fill: 'M' + Lp.join('L') + 'L' + Rp.slice().reverse().join('L') + 'Z', edge: 'M' + Lp.join('L') };
+      };
+      const blob = (cx, cy, rx, ry, r, n = 8) => {
+        const pts = Array.from({ length: n }, (_, i) => { const a = (i / n) * Math.PI * 2, k = 0.75 + r() * 0.5; return [cx + Math.cos(a) * rx * k, cy + Math.sin(a) * ry * k]; });
+        const mid = (a, b) => [(a[0] + b[0]) / 2, (a[1] + b[1]) / 2], p = (a) => a.map(f).join(' ');
+        let d = `M${p(mid(pts[n - 1], pts[0]))}`;
+        for (let i = 0; i < n; i++) d += `Q${p(pts[i])} ${p(mid(pts[i], pts[(i + 1) % n]))}`;
+        return d + 'Z';
+      };
+      const star = (x, y, s) => `M${f(x)} ${f(y - 2.4 * s)}L${f(x + 0.7 * s)} ${f(y - 0.7 * s)}L${f(x + 2.4 * s)} ${f(y)}L${f(x + 0.7 * s)} ${f(y + 0.7 * s)}L${f(x)} ${f(y + 2.4 * s)}L${f(x - 0.7 * s)} ${f(y + 0.7 * s)}L${f(x - 2.4 * s)} ${f(y)}L${f(x - 0.7 * s)} ${f(y - 0.7 * s)}Z`;
+      const foamMark = (x, y, sz, sw = 1.6, op = 0.85) => `<path d="M${f(x)} ${f(y)}q${f(sz * 0.25)} ${f(-sz * 0.28)} ${f(sz * 0.5)} 0t${f(sz * 0.5)} 0" fill="none" stroke="#fff" stroke-width="${sw}" stroke-linecap="round" opacity="${op}"/>`;
+      const marks = (n, seed) => { const r = rng(seed); let s = ''; for (let i = 0; i < n; i++) { const x = r() * SW, y = 8 + r() * (SH - 16), sz = 8 + r() * 6; s += foamMark(x, y, sz); if (i % 2 === 0) s += foamMark(x + sz * 0.3, y + 4.5, sz * 0.7, 1.1, 0.55); } return s; };
+      const sparkles = (n, seed) => { const r = rng(seed); let s = ''; for (let i = 0; i < n; i++) s += `<path class="twinkle" style="animation-duration:${f(2 + r() * 2.2)}s;animation-delay:-${f(r() * 3)}s" d="${star(r() * SW, 8 + r() * (SH - 16), 0.8 + r() * 0.8)}" fill="#fff"/>`; return s; };
+      const seaBase = (c) => `<rect width="${SW}" height="${SH}" fill="${c}"/>`;
+      const seaLanes = () => `<g class="lanes">${[SH / 3, (2 * SH) / 3].map((y) => `<path d="M26 ${y}H${SW}" stroke="${SEA.light}" stroke-width="1.6" stroke-dasharray="7 6" stroke-linecap="round" opacity=".7"/>`).join('')}</g>`;
+      function swells(deepOp, lightOp, deepPitchOf = 160) {
+        let deep = '', light = '';
+        for (let i = 0; i < 2; i++) deep += `<path d="${vband(30 + i * deepPitchOf, 70, 7, 2, i * 1.3).fill}" fill="${SEA.deep}" opacity="${deepOp}"/>`;
+        for (let i = 0; i < 4; i++) { const b = vband(10 + i * 80, 24, 5, 3, i * 0.9); light += `<path d="${b.fill}" fill="${SEA.light}" opacity="${lightOp}"/><path d="${b.edge}" fill="none" stroke="#fff" stroke-width="1.6" stroke-linecap="round" stroke-dasharray="16 26" stroke-dashoffset="${i * 13}" opacity=".6"/>`; }
+        return drift(deep, 34) + drift(light, 20, 6);
+      }
+      function seaShore(shallows) {
+        const r = rng(3), br = (d, s = '') => `<g class="breathe" style="animation-duration:${d}s">${s}</g>`; let s = '';
+        if (shallows) s += br(4.6, [[48, 0], [38, 1], [29, 2]].map(([x, i]) => `<path d="${shorePath(SH, x, 6 - i)}" fill="${SEA.shallow[i]}" opacity="${f(0.5 + i * 0.12)}"/>`).join('') + `<path d="${shorePath(SH, 50, 6, false)}" fill="none" stroke="#fff" stroke-width="1.2" stroke-linecap="round" stroke-dasharray="5 6" opacity=".55"/>`);
+        s += `<path d="${shorePath(SH, 24)}" fill="${SEA.sandDark}" transform="translate(-3 0)"/><path d="${shorePath(SH, 22)}" fill="${SEA.sand}"/>`;
+        for (let i = 0; i < 18; i++) s += `<circle cx="${f(2 + r() * 14)}" cy="${f(r() * SH)}" r="${f(0.8 + r() * 1.2)}" fill="${SEA.sandDark}" opacity=".8"/>`;
+        return s + br(3.2, `<path d="${shorePath(SH, 22, 5, false)}" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round"/><path d="${shorePath(SH, 25, 5, false)}" fill="none" stroke="#fff" stroke-width="1.2" stroke-linecap="round" opacity=".6" stroke-dasharray="6 5"/>`);
+      }
+
+      // S1: flat bands of two tones rolling past, broken foam crests
+      const seaSwells = () => seaBase(SEA.base) + swells(0.38, 0.32) + drift(marks(10, 5), 14) + seaLanes() + seaShore(false);
+
+      // S2: contour-style depth patches, sandbank patches, ripple rings, stepped shallows
+      function seaDepth() {
+        const r = rng(8); let patches = '', rip = '';
+        for (let i = 0; i < 5; i++) { const cx = r() * SW, cy = 30 + r() * (SH - 60), rx = 36 + r() * 30, ry = 14 + r() * 14; patches += `<path d="${blob(cx, cy, rx, ry, rng(100 + i))}" fill="${SEA.deep}" opacity=".34"/><path d="${blob(cx, cy, rx * 0.55, ry * 0.5, rng(100 + i))}" fill="${SEA.deeper}" opacity=".3"/>`; }
+        for (let i = 0; i < 3; i++) { const cx = r() * SW, cy = 30 + r() * (SH - 60), d = blob(cx, cy, 34, 12, rng(200 + i)); patches += `<path d="${d}" fill="#9fe0f2" opacity=".22"/><path d="${d}" fill="none" stroke="#fff" stroke-width="1.2" stroke-dasharray="3 5" stroke-linecap="round" opacity=".45"/>`; }
+        for (let i = 0; i < 3; i++) rip += `<ellipse class="ripple" style="animation-delay:-${f(i * 1.5)}s" cx="${f(40 + r() * (SW - 60))}" cy="${f(20 + r() * (SH - 40))}" rx="16" ry="8" fill="none" stroke="#fff" stroke-width="1.4"/>`;
+        return seaBase(SEA.base) + drift(patches, 40) + drift(rip + marks(6, 9), 24) + seaLanes() + seaShore(true);
+      }
+
+      // S3: brighter water, drifting light nets at two speeds, twinkling glints
+      function seaCaustic() {
+        const cells = (n, seed, rmin, rmax, stroke, sw, op) => { const r = rng(seed); let s = ''; for (let i = 0; i < n; i++) { const cx = r() * SW, cy = r() * SH, rr = rmin + r() * (rmax - rmin); const pts = Array.from({ length: 6 }, (_, j) => { const a = (j / 6) * Math.PI * 2 + r() * 0.5, k = 0.7 + r() * 0.5; return `${f(cx + Math.cos(a) * rr * k)} ${f(cy + Math.sin(a) * rr * k * 0.8)}`; }); s += `<path d="M${pts.join('L')}Z" fill="none" stroke="${stroke}" stroke-width="${sw}" stroke-linejoin="round" opacity="${op}"/>`; } return s; };
+        return seaBase('#2f97d9') + `<path d="M-20 0L120 0L60 ${SH}L-80 ${SH}Z" fill="#fff" opacity=".06"/>` + drift(cells(22, 13, 14, 26, '#9adbf7', 1.3, 0.4), 22) + drift(cells(16, 17, 18, 30, '#fff', 1, 0.22), 31, 9) + drift(sparkles(12, 4), 38) + seaLanes() + seaShore(false);
+      }
+
+      // S4: soft swells + shallows + glints, with fish, gull shadows, seaweed and driftwood
+      function seaAlive() {
+        const r = rng(21); let fishes = '', weed = '', gulls = '';
+        const fish = (x, y, k) => `<path transform="translate(${f(x)} ${f(y)}) scale(${k})" d="M0 0Q4-3.2 9-.8L12-3V3L9 .8Q4 3.2 0 0Z" fill="${SEA.deeper}" opacity=".55"/>`;
+        for (const [cx, cy, n] of [[70, 206, 9], [210, 74, 6]]) { let g = ''; for (let i = 0; i < n; i++) { const k = Math.ceil(i / 2), side = i % 2 ? 1 : -1; g += fish(cx + k * 11 + r() * 3, cy + side * k * 7 + r() * 3, 0.9 + r() * 0.3); } fishes += `<g class="sway" style="animation-delay:-${f(cx / 40)}s">${g}</g>`; }
+        for (const [x, y] of [[90, 30], [250, 160], [30, 222]]) weed += `<g transform="translate(${x} ${y})"><g class="bob"><g fill="none" stroke="#6ea85a" stroke-width="2.2" stroke-linecap="round" opacity=".6"><path d="M0 0q-3-6 0-12"/><path d="M4 1q-1-7 3-11"/><path d="M-4 1q-4-4-6-9"/></g></g></g>`;
+        for (const [x, y] of [[40, 70], [190, 190]]) gulls += `<path d="M0 0Q5-6 10 0Q15-6 20 0" transform="translate(${x} ${y})" fill="none" stroke="#04245a" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" opacity=".16"/>`;
+        const wood = `<g transform="translate(150 28) rotate(-18)"><g class="bob"><rect x="-14" y="-3" width="28" height="6" rx="3" fill="#8a4a22"/><path d="M-10 -1H8" stroke="#c8763a" stroke-width="1.4" stroke-linecap="round"/><circle cx="11" cy="0" r="1.2" fill="#5a2f14"/></g></g>`;
+        return seaBase(SEA.base) + swells(0.3, 0.26) + drift(marks(5, 6), 14) + drift(sparkles(6, 8), 38) + drift(fishes, 46, 3) + drift(weed, 30, 11) + drift(wood, 26, 5) + drift(gulls, 9, 2) + seaLanes() + seaShore(true);
+      }
+
+      const wakeDefs = (id) => `<defs><linearGradient id="${id}f" x1="1" y1="0" x2="0" y2="0"><stop offset="0" stop-color="#fff" stop-opacity=".34"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></linearGradient><linearGradient id="${id}s" x1="1" y1="0" x2="0" y2="0"><stop offset="0" stop-color="#fff" stop-opacity=".9"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></linearGradient></defs>`;
+      const wake = (x, y, sc, id) => { const t = x - 10 * sc, e = 32; return `<g class="wake"><path d="M${f(t)} ${f(y - 1.5)}L${f(t - e)} ${f(y - 10)}L${f(t - e)} ${f(y + 10)}L${f(t)} ${f(y + 1.5)}Z" fill="url(#${id}f)"/><path d="M${f(t)} ${f(y - 1.5)}L${f(t - e)} ${f(y - 10)}M${f(t)} ${f(y + 1.5)}L${f(t - e)} ${f(y + 10)}" fill="none" stroke="url(#${id}s)" stroke-width="1.5" stroke-linecap="round"/></g>`; };
+
+      const SEAS = [
+        { key: 'S1', fn: seaSwells, title: 'S1 \u00b7 Tonal swells', blurb: 'Wavy bands of two tones roll past at two speeds, with broken foam crests and ripple marks. The simplest and calmest.', tags: [['Cheapest'], ['Highest contrast for hazards'], ['Low risk']] },
+        { key: 'S2', fn: seaDepth, title: 'S2 \u00b7 Depth & shallows', blurb: 'Contour-style deep patches, pale sandbanks, expanding ripple rings and stepped turquoise shallows at the shore.', tags: [['Map-like'], ['Shore gets a lot nicer'], ['Patches near lanes: check']] },
+        { key: 'S3', fn: seaCaustic, title: 'S3 \u00b7 Sparkle & caustics', blurb: 'Brighter, tropical water: drifting light nets at two speeds interfere, glints twinkle.', tags: [['Shimmery'], ['Busiest texture', 'warn'], ['Needs low opacity']] },
+        { key: 'S4', fn: seaAlive, title: 'S4 \u00b7 Alive sea (mix)', blurb: 'Soft swells, shallows and glints, plus fish shoals, gull shadows, seaweed and a bobbing plank. Wakes behind the fleet.', tags: [['Most story'], ['Details are all optional'], ['Suggested']] },
+      ];
+      function cropOf(S) {
+        const wid = uid('wk'), sc = 1, pts = [[78, 104], [78, 142], [120, 123]];
+        let s = S.fn() + wakeDefs(wid) + pts.map(([x, y]) => wake(x, y, sc, wid)).join('');
+        pts.forEach(([x, y], i) => { s += place(B.ship({ sail: i, ppu: sc }), x, y, sc, 90, 'ship'); });
+        s += place(B.pirate({ ppu: 0.7 }), 168, 128, 0.7, -90, 'pirate');
+        return `<svg viewBox="0 70 200 120" width="200" overflow="hidden">${s}</svg>`;
+      }
+
+      const lab = (t) => `<div class="lab">${t}</div>`;
+      const stack = (svg, t) => `<div class="stack">${svg}${lab(t)}</div>`;
+      const ROWS = [
+        { label: 'Mini scene<small>sea, fleet, hazards</small>', cls: 'scene', cells: (S) => sceneOf(S) },
+        { label: 'Fleet ship<small>110 px · 24 px · 20 px</small>', cells: (S) => { const I = S.impl; return [stack(sv('ship', I.ship({ sail: 0, scale: 1.15, ppu: 4.6 }), 110), 'wide sail'), stack(sv('ship', I.ship({ sail: 1, scale: 0.8, ppu: 4.6 }), 110), 'narrow sail'), stack(sv('ship', I.ship({ sail: 2, ppu: 1 }), 24), '24 px'), stack(sv('ship', I.ship({ sail: 0, ppu: 0.83 }), 20), '20 px')].join(''); } },
+        { label: 'Ship states<small>menu icons – kept simple</small>', cls: 'dark', cells: (S) => { const I = S.key === 'B' ? A : S.impl; return ['arrived', 'repaired', 'lost'].map((st) => stack(sv('ship', I.ship({ state: st, ppu: 1.4 }), 34), st)).join('') + stack(sv('ship', I.ship({ state: 'arrived', ppu: 0.83 }), 20) + sv('ship', I.ship({ state: 'repaired', ppu: 0.83 }), 20) + sv('ship', I.ship({ state: 'lost', ppu: 0.83 }), 20), '20 px'); } },
+        { label: 'Storm', cells: (S) => sv('storm', S.impl.storm({ ppu: 1.1 }), 290) },
+        { label: 'Kraken', cells: (S) => sv('kraken', S.impl.kraken({ ppu: 1.8 }), 220) },
+        { label: 'Pirates', cells: (S) => sv('pirate', S.impl.pirate({ ppu: 1.7 }), 170) },
+        { label: 'Mermaid<small>and pearl</small>', cells: (S) => sv('mermaid', S.impl.mermaid({ ppu: 3 }), 130) },
+        { label: 'UI<small>menu card, crates – kept simple</small>', cls: 'ui', cells: (S) => { const I = S.key === 'B' ? A : S.impl, ui = S.key === 'B' ? 'ui-a' : S.ui, mk = (r) => sv('crate', I.crate ? I.crate(r, { ppu: 2 }) : I.ui(r), 44);
+          return `<div class="${ui}"><div class="ui-card"><div class="ui-title">Příprava <span>kolo 3 / 6</span></div><div class="ui-crates">${mk('fund')}<span>3</span>${mk('cargo')}<span>5</span>${mk('profit')}<span>2</span>${mk('repair')}<span>1</span></div><div class="ui-bar"><i></i></div><div class="ui-btns"><button class="btn pri">Vyplout</button><button class="btn">Pravidla</button></div></div></div>`; } },
+      ];
+
+      const grid = document.getElementById('grid');
+      const seaGrid = document.getElementById('seaGrid');
+      const head = (S) => `<div class="colhead"><h2>${S.title}</h2><p>${S.blurb}</p><div class="tags">${S.tags.map(([t, w]) => `<span class="tag${w ? ' warn' : ''}">${t}</span>`).join('')}</div></div>`;
+      const SHOWN = location.search.includes('all') ? STYLES : STYLES.filter((S) => S.key === 'A' || S.key === 'B');
+      grid.style.setProperty('--cols', SHOWN.length);
+      let html = '<div></div>' + SHOWN.map(head).join('');
+      for (const R of ROWS) {
+        html += `<div class="rowlabel">${R.label}</div>`;
+        for (const S of SHOWN) { const c = R.cells(S); html += `<div class="cell ${R.cls === 'ui' ? 'ui' : R.cls === 'dark' ? 'dark' : S.cls} ${R.cls === 'scene' ? 'scene' : ''}">${c}</div>`; }
+      }
+      grid.innerHTML = html;
+
+      seaGrid.style.setProperty('--cols', SEAS.length);
+      seaGrid.innerHTML = '<div></div>' + SEAS.map(head).join('')
+        + '<div class="rowlabel">Mini scene<small>animated</small></div>' + SEAS.map((S) => `<div class="cell scene">${sceneOf({ impl: B }, S.fn)}</div>`).join('')
+        + '<div class="rowlabel">Close-up<small>readability</small></div>' + SEAS.map((S) => `<div class="cell scene">${cropOf(S)}</div>`).join('');
+
+      document.getElementById('gray').addEventListener('change', (e) => [grid, seaGrid].forEach((g) => g.classList.toggle('gray', e.target.checked)));
+      document.getElementById('still').addEventListener('change', (e) => document.body.classList.toggle('still', e.target.checked));
+      document.getElementById('wakes').addEventListener('change', (e) => document.body.classList.toggle('nowake', !e.target.checked));
+    </script>
+  </body>
+</html>

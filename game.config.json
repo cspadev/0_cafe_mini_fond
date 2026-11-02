@@ -1,0 +1,72 @@
+{
+  "scoreVersion": 1,
+  "defaults": { "level": 2, "rounds": 5, "ships": 30, "capitalPerShip": 50, "tutorial": true, "retries": 3 },
+  "limits": { "rounds": [1, 10], "ships": [10, 60], "capitalPerShip": [10, 100], "retries": [0, 10] },
+  "economy": {
+    "repairCost": 40,
+    "cargoMultiplier": 3,
+    "shipValue": 200,
+    "pearlValue": 150,
+    "goldUnit": 100,
+    "surplusUnused": 2
+  },
+  "gust": {
+    "meanShift": 0.35,
+    "cooldown": 0.5,
+    "noise": 0.15,
+    "delay": [0, 0.25],
+    "tau": 0.5,
+    "tauJitter": 0.15,
+    "strength": [0.6, 1.5],
+    "swipeStandard": 0.25,
+    "softEdge": 0.04
+  },
+  "ships": {
+    "edgeLimit": [0.03, 0.34],
+    "elasticity": { "stiffness": 20, "damping": 5, "depth": 0.6 },
+    "startSpread": 0.07,
+    "sway": 0.01,
+    "rowOffset": 0.15,
+    "cohesion": 0.1,
+    "kRange": { "1": [0.8, 1.2], "2": [0.7, 1.3], "3": [0.6, 1.4] }
+  },
+  "track": {
+    "leadIn": 4,
+    "leadOut": 3,
+    "length": [20, 30],
+    "pearlRadius": 0.05,
+    "pearlInset": 0.03,
+    "pearlWeights": [1, 2, 2],
+    "maxPearls": 2,
+    "rows": { "base": { "1": 3, "2": 4, "3": 4 }, "growEvery": 2 },
+    "overhang": { "pirates": 0, "kraken": 0.03, "storm": 0.1 },
+    "p": { "pirates": 1, "kraken": 0.4, "storm": 0.4 },
+    "gap": { "between": 6, "betweenMin": 3.5, "perLane": 2.5 }
+  },
+  "formations": [
+    { "id": "patrol", "kind": "pirates", "rows": ["P.P"], "gap": [], "minLevel": 1 },
+    { "id": "triangle", "kind": "pirates", "rows": ["P.P", ".P."], "gap": [2], "minLevel": 2 },
+    { "id": "fleet", "kind": "pirates", "rows": ["PP.", ".PP"], "gap": [2.1], "minLevel": 2 },
+    { "id": "ambush", "kind": "pirates", "rows": ["PP.", "..P"], "gap": [1.6], "minLevel": 2 },
+    { "id": "tentacle", "kind": "kraken", "rows": [".K."], "gap": [], "minLevel": 1 },
+    { "id": "sweep", "kind": "kraken", "rows": ["K..", ".K.", "..K"], "gap": [2, 2], "minLevel": 2 },
+    { "id": "squall", "kind": "storm", "rows": ["SS."], "gap": [], "minLevel": 1 },
+    { "id": "front", "kind": "storm", "rows": ["SS.", ".SS"], "gap": [5], "minLevel": 1 }
+  ],
+  "forecast": {
+    "wGood": { "1": 0.18, "2": 0.2, "3": 0.22 },
+    "wAverage": { "1": 0.3, "2": 0.34, "3": 0.38 },
+    "prior": { "pirates": [0.8, 1], "kraken": [0.6, 1], "storm": [0.8, 0.98] }
+  },
+  "view": { "lookahead": 4.5, "fleetFraction": 0.33 },
+  "tutorial": { "ships": 10, "rows": ["P.P", ".K."], "gap": 4 },
+  "targets": {
+    "T1": { "shift": [0.33, 0.5] },
+    "T2": { "shiftSd": [0.04, 0.1], "settle95": 1.5, "responseSpread": 0.3 },
+    "T3": { "holdSeconds": 6, "uniqueShare": 0.8, "spread": 0.12 },
+    "T4": { "arriveShare": 0.1, "tracksShare": 0.95, "tracks": 200 },
+    "T10": { "tracks": 1000 },
+    "T11": { "survive": [0.65, 0.95], "dropExtremes": 0.038, "dropMistake": 0.011, "mistake": 0.4 },
+    "T14": { "minCrossSeconds": 1.2 }
+  }
+}

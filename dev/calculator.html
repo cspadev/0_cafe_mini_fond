@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="cs">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Lodní fond – kalkulátor (vývoj)</title>
+    <style>
+      /* dev-only layout; colours come from the CSS variables written by applyTheme() */
+      #root { max-width: 1100px; margin: 0 auto; padding: 16px 16px 48px; }
+      .dev-page { display: flex; flex-direction: column; gap: 16px; }
+      .dev-page h1 { font-size: 28px; }
+      .dev-page h3 { margin: 8px 0 0; font-size: 16px; font-weight: 800; }
+      .dev-nav { display: flex; flex-wrap: wrap; gap: 8px 16px; align-items: baseline; justify-content: space-between; }
+      .dev-nav a { color: var(--sea-light); }
+      .note-box { background: var(--navy); border: 2px solid var(--gold); border-radius: 8px; padding: 8px 12px; }
+      .fields { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 12px 16px; }
+      .field { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+      .field-label { font-size: 14px; font-weight: 700; }
+      .field input[type='number'], .field input[type='text'], .field select, .dev-input {
+        font: inherit; color: var(--text); background: var(--navy); border: 2px solid var(--sea-light);
+        border-radius: 8px; padding: 4px 10px; min-height: 44px; width: 100%; font-variant-numeric: tabular-nums;
+      }
+      .field input:focus-visible, .field select:focus-visible { outline: 3px solid var(--gold); outline-offset: 2px; }
+      .field input[aria-invalid='true'] { border-color: var(--danger); }
+      .grid-2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(420px, 1fr)); gap: 16px; align-items: start; }
+      .kv { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px 16px; }
+      .kv > div { display: flex; flex-direction: column; background: var(--navy); border-radius: 8px; padding: 6px 10px; }
+      .kv dt { font-size: 13px; color: var(--muted); }
+      .kv dd { margin: 0; font-size: 20px; font-weight: 800; font-variant-numeric: tabular-nums; }
+      .kv .pos { color: var(--ok); }
+      .kv .neg { color: var(--danger); }
+      .table-wrap { overflow-x: auto; }
+      table.dev-table { width: 100%; border-collapse: collapse; font-size: 14px; font-variant-numeric: tabular-nums; }
+      .dev-table th, .dev-table td { padding: 6px 8px; text-align: right; border-bottom: 1px solid var(--navy); white-space: nowrap; }
+      .dev-table th:first-child, .dev-table td:first-child { text-align: left; }
+      .dev-table thead th { color: var(--muted); font-size: 12px; font-weight: 700; }
+      .dev-table tr.on td { background: color-mix(in srgb, var(--gold) 28%, transparent); font-weight: 800; }
+      .dev-table .sep { border-left: 2px solid var(--navy); }
+      .status-line { align-items: flex-start; }
+      .err { color: var(--text); background: var(--navy); border: 2px solid var(--danger); border-radius: 8px; padding: 4px 10px; }
+      .pass { display: inline-flex; align-items: center; gap: 4px; }
+      .chart { width: 100%; height: auto; background: var(--navy); border-radius: 8px; display: block; }
+      .chart text { font-size: 11px; fill: var(--muted); font-family: inherit; }
+      .chart-legend { display: flex; flex-wrap: wrap; gap: 4px 16px; font-size: 14px; color: var(--muted); }
+      .chart-legend span { display: inline-flex; align-items: center; gap: 6px; }
+      .key { display: inline-block; width: 14px; height: 14px; border-radius: 50%; }
+      .bars { display: flex; align-items: flex-end; gap: 4px; height: 120px; background: var(--navy); border-radius: 8px; padding: 8px 8px 0; }
+      .bar-col { flex: 1; display: flex; flex-direction: column; justify-content: flex-end; align-items: center; height: 100%; font-size: 11px; color: var(--muted); }
+      .bar { width: 100%; background: var(--sea-light); border-radius: 4px 4px 0 0; min-height: 1px; }
+      .bar-axis { display: flex; gap: 4px; padding: 2px 8px 0; font-size: 11px; color: var(--muted); }
+      .bar-axis span { flex: 1; text-align: center; }
+      .forecast-line { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 12px; }
+      .inline-fields { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 8px 12px; }
+    </style>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="./calculator.tsx"></script>
+  </body>
+</html>

@@ -1,0 +1,36 @@
+{
+  "name": "lodni-fond",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "engines": {
+    "node": ">=20.19"
+  },
+  "scripts": {
+    "dev": "vite",
+    "dev:api": "node --env-file-if-exists=.env.local scripts/dev-api.ts",
+    "seed": "node scripts/seed-demo.ts",
+    "build": "tsc --noEmit && vite build",
+    "build:api": "node scripts/build-api.ts",
+    "build:vercel": "npm run build && node scripts/migrate.ts --if-configured && npm run build:api",
+    "db:migrate": "node --env-file-if-exists=.env.local scripts/migrate.ts",
+    "preview": "vite preview",
+    "test": "node --test test/*.test.ts",
+    "calc": "node scripts/calc.ts",
+    "check": "node scripts/check.ts"
+  },
+  "dependencies": {
+    "@neondatabase/serverless": "1.2.0",
+    "react": "18.3.1",
+    "react-dom": "18.3.1"
+  },
+  "devDependencies": {
+    "@electric-sql/pglite": "0.5.10",
+    "@types/react": "18.3.31",
+    "@types/react-dom": "18.3.7",
+    "@vitejs/plugin-react": "5.2.0",
+    "esbuild": "0.28.2",
+    "typescript": "5.6.3",
+    "vite": "7.3.7"
+  }
+}

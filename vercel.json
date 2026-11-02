@@ -1,0 +1,5 @@
+{
+  "buildCommand": "npm run build:vercel",
+  "rewrites": [{ "source": "/data", "destination": "/data/index.html" }],
+  "redirects": [{ "source": "/dev", "destination": "/dev/", "permanent": false }]
+}
