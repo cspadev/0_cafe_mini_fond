@@ -46,11 +46,6 @@ const ellipse = (cx: number, cy: number, rx: number, ry: number): string =>
   `M${f(cx - rx)} ${f(cy)}a${f(rx)} ${f(ry)} 0 1 0 ${f(2 * rx)} 0a${f(rx)} ${f(ry)} 0 1 0 ${f(-2 * rx)} 0Z`;
 const rrect = (x: number, y: number, w: number, h: number, r: number): string =>
   `M${x + r} ${y}L${x + w - r} ${y}Q${x + w} ${y} ${x + w} ${y + r}L${x + w} ${y + h - r}Q${x + w} ${y + h} ${x + w - r} ${y + h}L${x + r} ${y + h}Q${x} ${y + h} ${x} ${y + h - r}L${x} ${y + r}Q${x} ${y} ${x + r} ${y}Z`;
-/** Circular arc from angle a0 to a1 (degrees, clockwise from the +x axis). */
-const arcPath = (cx: number, cy: number, r: number, a0: number, a1: number): string => {
-  const p = (a: number) => [cx + r * Math.cos((a * Math.PI) / 180), cy + r * Math.sin((a * Math.PI) / 180)].map(f).join(' ');
-  return `M${p(a0)}A${r} ${r} 0 ${a1 - a0 > 180 ? 1 : 0} 1 ${p(a1)}`;
-};
 
 // ---------------------------------------------------------------------------------------------------------- fleet ship
 const HULL = 'M12 1.6C15.8 4.8 17 11 16.1 18.6Q15.8 22 12 22.6Q8.2 22 7.9 18.6C7 11 8.2 4.8 12 1.6Z';
@@ -282,18 +277,31 @@ export function stormCloud(lanes: number): Shape {
   for (let j = 0; j <= m; j++) {
     circles.push({ x: 26 + ((W - 52) * j) / m, y: j % 2 === 0 ? 52 : 42, r: j % 2 === 0 ? 26 : 33 });
   }
+  const tufts = circles.slice(1).flatMap((right, index) => {
+    const left = circles[index];
+    const x = (left.x + right.x) / 2;
+    const r = right.r === 33 ? 14 : 16;
+    return [
+      { x, y: Math.min(left.y - left.r, right.y - right.r) + r * 1.35, r },
+      { x, y: 56, r: 22 },
+    ];
+  });
   const mid = circles[Math.min(m, 2 * Math.floor(lanes / 2) + 1)];
   const rain: Part[] = [];
   for (let i = 0; i < lanes * 3; i++) {
     const x = 18 + ((W - 36) * (i + 0.5)) / (lanes * 3);
     rain.push({ d: `M${f(x)} ${80 + (i % 3)}L${f(x - 3.6)} ${f(89 + (i % 3))}`, stroke: theme.rain, sw: 2.4 });
   }
-  // small lobes first, the big ones in front; every lobe gets a light rim on its upper left
+  // small lobes first, the big ones in front
   const lobes = [...circles].sort((a, b) => a.r - b.r || Math.abs(b.x - mid.x) - Math.abs(a.x - mid.x));
-  const puffs: Part[] = lobes.flatMap((c): Part[] => [
-    { d: circle(c.x, c.y, c.r), fill: theme.storm },
-    { d: arcPath(c.x, c.y, c.r - 3.4, 195, 285), stroke: theme.stormLight, sw: 3.4, opacity: 0.9 },
-  ]);
+  const puffs: Part[] = lobes.flatMap((c): Part[] => {
+    const { x, y, r } = c;
+    const silhouette = circle(x, y, r);
+    return [
+      { d: silhouette, fill: theme.storm },
+      { d: `M${f(x - r)} ${f(y + r * 0.24)}Q${f(x - r * 0.55)} ${f(y + r * 0.04)} ${f(x - r * 0.12)} ${f(y + r * 0.3)}Q${f(x + r * 0.44)} ${f(y + r * 0.53)} ${f(x + r)} ${f(y + r * 0.16)}L${f(x + r)} ${f(y + r)}L${f(x - r)} ${f(y + r)}Z`, fill: theme.stormDark, opacity: 0.42, clip: silhouette },
+    ];
+  });
   const k = 0.87;
   const fx = mid.x;
   const fy = mid.y + 6;
@@ -302,8 +310,9 @@ export function stormCloud(lanes: number): Shape {
     w: W,
     h: 92,
     parts: [
-      { d: circles.map((c) => circle(c.x, c.y + 5, c.r)).join(''), fill: theme.stormDark, stroke: INK, sw: 3, outline: true },
+      { d: [...circles, ...tufts].map((c) => circle(c.x, c.y + 5, c.r)).join(''), fill: theme.stormDark, stroke: INK, sw: 3, outline: true },
       ...puffs,
+      ...tufts.map((c): Part => ({ d: circle(c.x, c.y, c.r), fill: theme.storm })),
       ...rain,
       { d: circle(fx - 20 * k, fy + 11 * k, 5 * k) + circle(fx + 20 * k, fy + 11 * k, 5 * k), fill: theme.blush, opacity: 0.55, fine: true },
       { d: circle(fx - 12 * k, fy - 4 * k, 7.6 * k) + circle(fx + 12 * k, fy - 4 * k, 7.6 * k), fill: theme.foam, stroke: INK, sw: 1.7 },
