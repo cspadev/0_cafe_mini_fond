@@ -1,6 +1,6 @@
 // Canvas rendering of the sailing view. Everything is drawn in a virtual portrait space (travel bottom → top,
 // lateral x from left to right); in landscape the whole world is rotated by 90°, so the logic is orientation independent.
-import { crate, fleetShip, kraken, LIGHTNING, mermaid, pearl, pirateShip, stormCloud, type Shape } from '../art/shapes';
+import { crate, fleetShip, kraken, LIGHTNING, mermaid, pearl, pirateShip, stormCloud, stormShadow, STORM_SHADOW_DY, type Shape } from '../art/shapes';
 import { isBlockingCell, isHit } from '../model/track';
 import { DT, percentile, type Sail } from '../model/sail';
 import { clamp, hashUnit, lerp } from '../model/rng';
@@ -321,6 +321,9 @@ function drawRow(ctx: CanvasRenderingContext2D, s: RenderState, row: TrackRow, v
       const n = j - i + 1;
       const cx = ((i + j + 1) / 2) * laneW;
       const stormW = n * laneW + 2 * ov;
+      const stormH = (stormW * 92) / (n * 100 + 60);
+      // shadow on the sea surface: stays put while the cloud bobs above it
+      drawSprite(ctx, sprite(`stormShadow${n}`, () => stormShadow(n), stormW, L.dpr, outline), cx, vy + stormH * STORM_SHADOW_DY, stormW);
       drawSprite(ctx, sprite(`storm${n}`, () => stormShape(n), stormW, L.dpr, outline), cx, vy + bob * 3, stormW);
       if (!s.reduced && (s.time * 0.25 + hashUnit(s.seed, index, i)) % 1 < 0.04) {
         ctx.save();

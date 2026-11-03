@@ -310,7 +310,7 @@ export function stormCloud(lanes: number): Shape {
     w: W,
     h: 92,
     parts: [
-      { d: [...circles, ...tufts].map((c) => circle(c.x, c.y + 5, c.r)).join(''), fill: theme.stormDark, stroke: INK, sw: 3, outline: true },
+      { d: [...circles, ...tufts].map((c) => circle(c.x, c.y + 5, c.r)).join(''), fill: theme.stormDark },
       ...puffs,
       ...tufts.map((c): Part => ({ d: circle(c.x, c.y, c.r), fill: theme.storm })),
       ...rain,
@@ -322,6 +322,13 @@ export function stormCloud(lanes: number): Shape {
       { d: `M${at(-9, 14)}Q${at(0, 6)} ${at(9, 14)}`, stroke: INK, sw: 3 },
     ],
   };
+}
+
+/** Shadow of `stormCloud(lanes)` on the sea: same width, centred `STORM_SHADOW_DY` of the cloud height below the cloud centre. */
+export const STORM_SHADOW_DY = 0.45;
+export function stormShadow(lanes: number): Shape {
+  const W = lanes * 100 + 80;
+  return { w: W, h: 30, parts: [{ d: ellipse(W / 2, 15, W * 0.45, 14), fill: theme.navy, opacity: 0.25 }] };
 }
 
 /** Lightning bolt flashing now and then over a storm (drawn by the renderer). */

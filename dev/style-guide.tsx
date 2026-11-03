@@ -26,6 +26,8 @@ import {
   statusDot,
   stateShip,
   stormCloud,
+  stormShadow,
+  STORM_SHADOW_DY,
   swipe,
   wave,
   wrench,
@@ -445,15 +447,17 @@ interface Character {
   key: string;
   name: string;
   shape: Shape;
+  /** shadow cast on the sea below the shape */
+  shadow?: Shape;
   hazard?: { kind: Kind; cells: number[] };
 }
 
 const CHARACTERS: Character[] = [
   { key: 'pirates', name: 'pirateShip()', shape: pirateShip(), hazard: { kind: 'pirates', cells: [0] } },
   { key: 'kraken', name: 'kraken()', shape: kraken(), hazard: { kind: 'kraken', cells: [1] } },
-  { key: 'storm1', name: 'stormCloud(1)', shape: stormCloud(1), hazard: { kind: 'storm', cells: [1] } },
-  { key: 'storm2', name: 'stormCloud(2)', shape: stormCloud(2), hazard: { kind: 'storm', cells: [0, 1] } },
-  { key: 'storm3', name: 'stormCloud(3)', shape: stormCloud(3), hazard: { kind: 'storm', cells: [0, 1, 2] } },
+  { key: 'storm1', name: 'stormCloud(1)', shape: stormCloud(1), shadow: stormShadow(1), hazard: { kind: 'storm', cells: [1] } },
+  { key: 'storm2', name: 'stormCloud(2)', shape: stormCloud(2), shadow: stormShadow(2), hazard: { kind: 'storm', cells: [0, 1] } },
+  { key: 'storm3', name: 'stormCloud(3)', shape: stormCloud(3), shadow: stormShadow(3), hazard: { kind: 'storm', cells: [0, 1, 2] } },
   { key: 'mermaid', name: 'mermaid()', shape: mermaid() },
   { key: 'pearl', name: 'pearl()', shape: pearl() },
 ];
@@ -529,7 +533,7 @@ function CharacterCard({ ch }: { ch: Character }) {
   const [coverage, setCoverage] = useState<number | null>(null);
   const big = ch.shape.w > 120 ? Math.min(330, ch.shape.w) : 160;
   const bigH = Math.ceil((big * ch.shape.h) / ch.shape.w);
-  const laneH = Math.ceil(ch.shape.h) + 40;
+  const laneH = Math.ceil(ch.shape.h) + (ch.shadow ? 70 : 40);
   const hit = ch.hazard ? hitInterval(ch.hazard.kind, ch.hazard.cells) : null;
   const hitW = hit ? hit[1] - hit[0] : 0;
 
@@ -570,6 +574,7 @@ function CharacterCard({ ch }: { ch: Character }) {
                 drawSea(ctx, TRACK + 2 * PAD, laneH);
                 drawLanes(ctx, laneH);
                 const cx = PAD + (hit[0] + hit[1]) / 2;
+                if (ch.shadow) drawShape(ctx, ch.shadow, cx, laneH / 2 + ch.shape.h * STORM_SHADOW_DY, ch.shape.w);
                 drawShape(ctx, ch.shape, cx, laneH / 2, ch.shape.w);
                 ctx.strokeStyle = theme.danger;
                 ctx.lineWidth = 2;
